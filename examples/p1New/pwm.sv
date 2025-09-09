@@ -11,11 +11,6 @@ module pwm #(
     // Declare PWM generator counter variable
     logic [$clog2(PWM_INTERVAL) - 1:0] pwm_count = 0;
 
-      // start value
-    initial begin
-        pwm_value = 0;
-    end
-
     // Implement counter for timing transition in PWM output signal
     always_ff @(posedge clk) begin
         // reset kind of vibe
@@ -28,6 +23,7 @@ module pwm #(
         end
     end
     // if count is greater, then turn light on
+    // 
     // Generate PWM output signal
     assign pwm_out = (pwm_count > pwm_value) ? 1'b0 : 1'b1;
 
