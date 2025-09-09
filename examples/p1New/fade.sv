@@ -10,7 +10,10 @@ module fade #(
     parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX
 )(
     input logic clk, 
-    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_value // 
+    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR,
+    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueG, 
+    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueB  
+ 
 );
 
     // Define state variable values
@@ -29,7 +32,10 @@ module fade #(
 
     // start value
     initial begin
-        pwm_value = 0;
+        pwm_valueR = 0;
+        pwm_valueG = 0;
+        pwm_valueB = 0;
+
     end
 
     // Register the next state of the FSM
@@ -65,9 +71,9 @@ module fade #(
     always_ff @(posedge time_to_inc_dec) begin
         case (current_state)
             PWM_INC:
-                pwm_value <= pwm_value + INC_DEC_VAL;
+                pwm_valueR <= pwm_valueR + INC_DEC_VAL;
             PWM_DEC:
-                pwm_value <= pwm_value - INC_DEC_VAL;
+                pwm_valueR <= pwm_valueR - INC_DEC_VAL;
         endcase
     end
 

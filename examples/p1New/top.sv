@@ -13,7 +13,7 @@ module top #(
 
 );
 
-    logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR = 1000;
+    logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR;
     logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueG;
     logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueB;
 
@@ -22,12 +22,16 @@ module top #(
     logic pwm_outB;
 
 
-    // fade #(
-    //     .PWM_INTERVAL   (PWM_INTERVAL)
-    // ) u1 (
-    //     .clk            (clk), 
-    //     .pwm_value      (pwm_value)
-    // );
+    fade #(
+        .PWM_INTERVAL   (PWM_INTERVAL)
+    ) u1 (
+        .clk            (clk), 
+        .pwm_valueR      (pwm_valueR), 
+        .pwm_valueG      (pwm_valueG), 
+        .pwm_valueB      (pwm_valueB), 
+
+    
+    );
 
     pwm #(
         .PWM_INTERVAL   (PWM_INTERVAL)
