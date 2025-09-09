@@ -19,16 +19,6 @@ module pwm #(
         pwm_value = 0;
     end
 
-    // Increment / Decrement PWM value as appropriate given current state
-    always_ff @(posedge time_to_inc_dec) begin
-        case (current_state)
-            PWM_INC:
-                pwm_value <= pwm_value + INC_DEC_VAL;
-            PWM_DEC:
-                pwm_value <= pwm_value - INC_DEC_VAL;
-        endcase
-    end
-
     // Implement counter for timing transition in PWM output signal
     always_ff @(posedge clk) begin
         // reset kind of vibe
