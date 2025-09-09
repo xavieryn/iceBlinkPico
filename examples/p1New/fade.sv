@@ -4,10 +4,12 @@
 // 'posedge clk' refers to the positive edge of a clock signal
 
 module fade #(
-    parameter INC_DEC_INTERVAL = 12000,     // CLK frequency is 12MHz, so 12,000 cycles is 1ms
-    parameter INC_DEC_MAX = 200,            // Transition to next state after 200 increments / decrements, which is 0.2s
+    parameter INC_DEC_INTERVAL = 2000000,     // CLK frequency is 12MHz, so 12,000 cycles is 1ms
+    parameter INC_DEC_MAX = 6,            // Transition to next state after 200 increments / decrements, which is 0.2s
     parameter PWM_INTERVAL = 1200,          // CLK frequency is 12MHz, so 1,200 cycles is 100us
-    parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX
+    parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX,
+    parameter CLKFREQ = 1200000
+    // parameter FIRSTCYCLE = 
 )(
     input logic clk, 
     output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR,
@@ -26,6 +28,7 @@ module fade #(
 
     // Declare variables for timing state transitions
     logic [$clog2(INC_DEC_INTERVAL) - 1:0] count = 0;
+    // logic [$clog2(CYCLES) - 1:0] degreeCount = 0;
     logic [$clog2(INC_DEC_MAX) - 1:0] inc_dec_count = 0;
     logic time_to_inc_dec = 1'b0;
     logic time_to_transition = 1'b0;
@@ -66,6 +69,17 @@ module fade #(
             time_to_inc_dec <= 1'b0; // turn negative
         end
     end
+
+    // Implement counter for incrementing / decrementing PWM value
+    // stands for always flip flop (moving syncronyously with a clock)
+    // always_ff @(posedge clk) begin
+    //     if (count == CYCLES - 1) begin // if it equals 12000 - 1
+    //         degreeCount <= 0; // reset
+    //     end
+    //     else begin
+    //         degreeCount <= degreeCount + 1; // increase count
+    //     end
+    // end
 
     // Increment / Decrement PWM value as appropriate given current state
     always_ff @(posedge time_to_inc_dec) begin

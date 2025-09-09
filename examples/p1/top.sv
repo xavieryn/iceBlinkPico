@@ -24,7 +24,7 @@ module top #(
     output logic    RGB_B
 );
     // max is 1200
-    logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR; 
+    logic [$clog2(PWqM_INTERVAL) - 1:0] pwm_valueR; 
     logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueG;
     logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueB;
 
