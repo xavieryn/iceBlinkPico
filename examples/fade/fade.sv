@@ -1,4 +1,7 @@
 // Fade
+// USES FINITE STATE MACHINE
+
+// 'posedge clk' refers to the positive edge of a clock signal
 
 module fade #(
     parameter INC_DEC_INTERVAL = 12000,     // CLK frequency is 12MHz, so 12,000 cycles is 1ms
@@ -7,14 +10,14 @@ module fade #(
     parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX
 )(
     input logic clk, 
-    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_value
+    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_value // 
 );
 
     // Define state variable values
     localparam PWM_INC = 1'b0;
     localparam PWM_DEC = 1'b1;
 
-    // Declare state variables
+    // Declare state variables (logic is a boolean)
     logic current_state = PWM_INC;
     logic next_state;
 
@@ -24,16 +27,18 @@ module fade #(
     logic time_to_inc_dec = 1'b0;
     logic time_to_transition = 1'b0;
 
+    // start value
     initial begin
         pwm_value = 0;
     end
 
     // Register the next state of the FSM
-    always_ff @(posedge time_to_transition)
+    // 200 (time_to_transitions) 12000 cycles (time_to_inc_dec)
+    always_ff @(posedge time_to_transition) // waiting for time_transition to go from 0 to 1
         current_state <= next_state;
 
     // Compute the next state of the FSM
-    always_comb begin
+    always_comb begin // seems like its always switching
         next_state = 1'bx;
         case (current_state)
             PWM_INC:
@@ -44,14 +49,15 @@ module fade #(
     end
 
     // Implement counter for incrementing / decrementing PWM value
+    // stands for always flip flop (moving syncronyously with a clock)
     always_ff @(posedge clk) begin
-        if (count == INC_DEC_INTERVAL - 1) begin
-            count <= 0;
-            time_to_inc_dec <= 1'b1;
+        if (count == INC_DEC_INTERVAL - 1) begin // if it equals 12000 - 1
+            count <= 0; // reset
+            time_to_inc_dec <= 1'b1; // turn positive
         end
         else begin
-            count <= count + 1;
-            time_to_inc_dec <= 1'b0;
+            count <= count + 1; // increase count
+            time_to_inc_dec <= 1'b0; // turn negative
         end
     end
 

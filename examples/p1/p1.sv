@@ -11,6 +11,10 @@ module top(
 // set_io -nowarn RGB_G    40
 // set_io -nowarn RGB_R    41
 
+// https://www.geeksforgeeks.org/utilities/hsv-to-rgb-converter/
+// set saturation and value to 100. only hue changes because that is the actual degree
+
+
     // CLK frequency is 12MHz, so 12,000,000 is one second
     // HSV is 360 degrees and we want intervals of 60 degrees
     parameter COLOR_INTERVAL = 12000000/6;
