@@ -1,4 +1,12 @@
-// p1
+/*
+p1
+This code was grabbed directly from blink and readapted. Looking at the makefile to understand the pcf, I was able to find the variable names 
+that were linked to each pin. Using that I went step by step, turning one light on a time, eventually being able to make more and more changes.
+I also looked at fade because I originally thought I had to use PWM, so code is heavily inspired from the fade example as well. 
+*/
+
+// Link to video https://photos.app.goo.gl/LXSy4NC4ng7RmHKC7
+
 module top(
     input logic     clk, 
     output logic    RGB_R,
@@ -19,7 +27,7 @@ module top(
             count <= 0; // reset counter
             colorChange <= 1'b1; // set colorChange to true
             if (cycleCount == CYCLES - 1)
-                cycleCount <= 0;
+                cycleCount <= 0; // reset after 1 full second (6 cycles) 
             else
                 cycleCount <= cycleCount + 1; 
         end
