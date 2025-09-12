@@ -1,6 +1,8 @@
 // Fade
 // USES FINITE STATE MACHINE
 
+// source ./environment
+
 // 'posedge clk' refers to the positive edge of a clock signal
 module fade #(
      // CLK frequency is 12MHz, (the whole loop should be a total of 1 second)
