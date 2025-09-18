@@ -23,7 +23,6 @@ module pwm #(
         end
     end
     // if count is greater, then turn light on
-    // 
     // Generate PWM output signal
     assign pwm_out = (pwm_count > pwm_value) ? 1'b0 : 1'b1;
 

@@ -9,7 +9,8 @@ module pwm #(
 );
 
     // Declare PWM generator counter variable
-    logic [$clog2(PWM_INTERVAL) - 1:0] pwm_count = 0;
+    logic [$clog2(PWM_INTERVAL) - 1:0] pwm_count = 0; // the clog2 is just calculating how many bits
+    // it actually needs to fit pwm_interval which is 1200
 
     // Implement counter for timing transition in PWM output signal
     always_ff @(posedge clk) begin

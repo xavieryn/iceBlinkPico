@@ -36,7 +36,7 @@ module top(
         end
     end
 
-    always_comb begin
+    always_comb begin // whenever some var changes in this always_comb, it will run
         // default: LED off (all 1’s, since active low)
         RGB_R = 1'b1;
         RGB_G = 1'b1;
@@ -46,9 +46,9 @@ module top(
             0: RGB_R = 1'b0; // red (starts here)
             1: begin RGB_R = 1'b0; RGB_G = 1'b0; end // yellow
             2: RGB_G = 1'b0; // green
-            3: RGB_B = 1'b0; // blue
-            4: begin RGB_R = 1'b0; RGB_B = 1'b0; end // purple
-            5: ; // black (all off, keep defaults)
+            3: begin RGB_G = 1'b0; RGB_B =1'b0; end // cyan
+            4: RGB_B = 1'b0; // blue
+            5: begin RGB_R = 1'b0; RGB_B = 1'b0; end // purple
         endcase
     end
 

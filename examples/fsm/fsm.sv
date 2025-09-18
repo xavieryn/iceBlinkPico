@@ -1,6 +1,7 @@
 // Finite State Machine
 
 module fsm #(
+    // can get passed in when the module is instantiated, but the amount below is default
     parameter BLINK_INTERVAL = 6000000,     // CLK freq is 12MHz, so 6,000,000 cycles is 0.5s
     parameter MAX_BLINK_COUNT = 20
 )(
@@ -12,7 +13,7 @@ module fsm #(
     output logic    blue
 );
 
-    // Define state variable values
+    // Define state variable values (these nums dont change)
     localparam GREEN = 2'b00;
     localparam BLUE = 2'b01;
     localparam RED = 2'b10;
