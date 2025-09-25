@@ -24,7 +24,7 @@ module fade_tb;
     initial begin
         $dumpfile("fade.vcd");
         $dumpvars(0, fade_tb);
-        #200000000  
+        #200000000  // 2 seconds of sim
         $finish;
     end
 
@@ -35,9 +35,5 @@ module fade_tb;
         clk = ~clk;
     end
 
-    // Optional: Add some monitoring
-    initial begin
-        $monitor("Time: %0t, RGB_R: %b, RGB_G: %b, RGB_B: %b", $time, RGB_R, RGB_G, RGB_B);
-    end
 
 endmodule

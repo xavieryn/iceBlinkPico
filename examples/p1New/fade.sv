@@ -6,14 +6,13 @@
 // 'posedge clk' refers to the positive edge of a clock signal
 module fade #(
      // CLK frequency is 12MHz, (the whole loop should be a total of 1 second)
-    parameter INC_DEC_INTERVAL = 10000, // 1/6 of a second
+    parameter INC_DEC_INTERVAL = 20000000, // 1/6 of a second (Add an extra 0 to see if there is physical difference)
     // Realizing a bug in code is that the inc_dec_max is what actually affects the pwm (how strong the light is)
     // which means i need to probably add anoother variable that counts once the inc_dec_max gets big enough,
     // then it will add to another variable that will change the color
-    parameter INC_DEC_MAX = 200, // Transition to 6 different stages which happens every 1/6 of a second
-    parameter STAGE = 6,
+    parameter INC_DEC_MAX = 6, // Transition to 6 different stages which happens every 1/6 of a second
     parameter PWM_INTERVAL = 1200, // CLK frequency is 12MHz, so 1,200 cycles is 100us
-    parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX,
+    parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX, // 200
     parameter CLKFREQ = 1200000
 )(
     input logic clk, 
@@ -33,13 +32,12 @@ module fade #(
     // Declare variables for timing state transitions
     logic [$clog2(INC_DEC_INTERVAL) - 1:0] count = 0;
     logic [$clog2(INC_DEC_MAX) - 1:0] inc_dec_count = 0;
-    logic [$clog2(STAGE) - 1:0] stage_count = 0;
     logic time_to_inc_dec = 1'b0;
     logic time_to_transition = 1'b0;
 
     // start value (nothing should be on because the pwm is basically saying 0% duty)
     initial begin
-        pwm_valueR = 1200; // start max duty because 0 degrees is pure red
+        pwm_valueR = PWM_INTERVAL; // it seems like my r is affecting my green and am not sure why
         pwm_valueG = 0;
         pwm_valueB = 0;
     end
@@ -79,7 +77,6 @@ module fade #(
     always_ff @(posedge time_to_inc_dec) begin
         if (inc_dec_count == INC_DEC_MAX - 1) begin // if it goes through all 6 counts (mode), then it resets back to the start
             inc_dec_count <= 0;
-            stage_count <= stage_count + 1;
             time_to_transition <= 1'b1;
         end
 
@@ -89,29 +86,45 @@ module fade #(
         end
     end
 
-    // this seems a bit funky
-     always_ff @(posedge time_to_transition) begin
-        if (stage_count == STAGE - 1) begin // if it goes through all 6 counts (mode), then it resets back to the start
-            stage_count <= 0;
-        end
-    end
-
     // Implement counter for timing state transitions
     // 1/6 of a second (values only change when time_to_inc_dec changes)
+     // HSV Color Wheel Implementation
     always_ff @(posedge time_to_inc_dec) begin
         case(inc_dec_count)
-            0: // red 0 degrees
-                pwm_valueB <= pwm_valueB - INC_DEC_VAL;
-            1: // yellow 60 degrees
-                pwm_valueG <= pwm_valueG + INC_DEC_VAL;
-            2: // green 120 degrees
-                pwm_valueR <= pwm_valueR - INC_DEC_VAL;
-            3: // cyan 180 degrees
-                pwm_valueB <= pwm_valueB + INC_DEC_VAL;
-            4: // blue 240 degrees 
-                pwm_valueG <= pwm_valueG - INC_DEC_VAL;
-            5: // purple 300 degrees
-                pwm_valueR <= pwm_valueR + INC_DEC_VAL;
+            0: begin // RED → YELLOW (increase green)
+                // R=max, G: 0→max, B=0
+                   pwm_valueG <= pwm_valueG + PWM_INTERVAL;
+            end
+            
+            1: begin // YELLOW → GREEN (decrease red)
+                // R: max→0, G=max, B=0  
+                    pwm_valueR <= pwm_valueR - PWM_INTERVAL;
+            
+            end
+            
+            2: begin // GREEN → CYAN (increase blue)
+                // R=0, G=max, B: 0→max
+                    pwm_valueB <= pwm_valueB + PWM_INTERVAL;
+       
+            end
+            
+            3: begin // CYAN → BLUE (decrease green)
+                // R=0, G: max→0, B=max
+                    pwm_valueG <= pwm_valueG - PWM_INTERVAL;
+              
+            end
+            
+            4: begin // BLUE → MAGENTA (increase red)
+                // R: 0→max, G=0, B=max
+                    pwm_valueR <= pwm_valueR + PWM_INTERVAL;
+             
+            end
+            
+            5: begin // MAGENTA → RED (decrease blue)
+                // R=max, G=0, B: max→0
+                    pwm_valueB <= pwm_valueB - PWM_INTERVAL;
+                
+            end
         endcase
     end
 endmodule

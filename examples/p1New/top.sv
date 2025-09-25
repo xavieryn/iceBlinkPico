@@ -9,7 +9,7 @@ module top #(
     input logic     clk, 
     output logic    RGB_R,
     output logic    RGB_G,
-    output logic    RGB_B,
+    output logic    RGB_B
 
 );
 
@@ -28,7 +28,7 @@ module top #(
         .clk            (clk), 
         .pwm_valueR      (pwm_valueR), 
         .pwm_valueG      (pwm_valueG), 
-        .pwm_valueB      (pwm_valueB), 
+        .pwm_valueB      (pwm_valueB)
     );
 
     pwm #(
