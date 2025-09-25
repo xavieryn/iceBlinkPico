@@ -1,12 +1,15 @@
 // Fade
 // USES FINITE STATE MACHINE
-
+// cd Applications/oss-cad-suite
 // source ./environment
 
 // 'posedge clk' refers to the positive edge of a clock signal
 module fade #(
      // CLK frequency is 12MHz, (the whole loop should be a total of 1 second)
-    parameter INC_DEC_INTERVAL = 2000000,    // 1/6 of a second
+    parameter INC_DEC_INTERVAL = 2000000, // 1/6 of a second
+    // Realizing a bug in code is that the inc_dec_max is what actually affects the pwm (how strong the light is)
+    // which means i need to probably add anoother variable that counts once the inc_dec_max gets big enough,
+    // then it will add to another variable that will change the color
     parameter INC_DEC_MAX = 6, // Transition to 6 different stages which happens every 1/6 of a second
     parameter PWM_INTERVAL = 1200, // CLK frequency is 12MHz, so 1,200 cycles is 100us
     parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX,
@@ -14,10 +17,13 @@ module fade #(
 )(
     input logic clk, 
     output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR, // max value of 2000000 for RGB
-    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueG, 
+    output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueG, // calculates the minimum number of bits needed to represent 2000000
     output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueB  
- 
+
 );
+    // Define state variable values
+    localparam PWM_INC = 1'b0;
+    localparam PWM_DEC = 1'b1;
 
     // Declare state variables (logic is a boolean)
     logic current_state = PWM_INC;
@@ -29,12 +35,11 @@ module fade #(
     logic time_to_inc_dec = 1'b0;
     logic time_to_transition = 1'b0;
 
-    // start value
+    // start value (nothing should be on because the pwm is basically saying 0% duty)
     initial begin
         pwm_valueR = 0;
         pwm_valueG = 0;
         pwm_valueB = 0;
-
     end
 
     // Register the next state of the FSM
@@ -55,8 +60,8 @@ module fade #(
     // Implement counter for incrementing / decrementing PWM value
     // Stands for always flip flop (moving syncronyously with a clock) 
     // Means this function is getting checked every time
-    always_ff @(posedge clk) begin
-        if (count == INC_DEC_INTERVAL - 1) begin // if it equals 2000000 
+    always_ff @(posedge clk) begin // changes every 
+        if (count == INC_DEC_INTERVAL - 1) begin // if it equals 2000000 (changing every 1/6 of a second)
             count <= 0; // reset
             time_to_inc_dec <= 1'b1; // turn positive
         end
@@ -82,34 +87,31 @@ module fade #(
     end
 
     // Implement counter for timing state transitions
-    // 1/6 of a second
+    // 1/6 of a second (values only change when time_to_inc_dec changes)
     always_ff @(posedge time_to_inc_dec) begin
         case(inc_dec_count)
-            1:
-                //PWM_G <= 1'b0;
-                pwm_valueG <= pwm_valueG + INC_DEC_VAL;
-            2:
-                //PWM_R <= 1'b1;
-                pwm_valueR <= pwm_valueR - INC_DEC_VAL;
-            3:
-                //PWM_B <= 1'b0;
-                pwm_valueB <= pwm_valueB + INC_DEC_VAL;
-
-            4:begin
+            0: begin // red
                 //PWM_R <= 1'b0;
-                //PWM_G <= 1'b1;
                 pwm_valueR <= pwm_valueR + INC_DEC_VAL;
-                pwm_valueG <= pwm_valueG - INC_DEC_VAL;
-            end
-            5:begin
-                // PWM_R <= 1'b1;
-                // PWM_B <= 1'b1;
-                pwm_valueR <= pwm_valueR - INC_DEC_VAL;
                 pwm_valueB <= pwm_valueB - INC_DEC_VAL;
             end
-            default:
-                //PWM_R <= 1'b0;
+            1: // yellow
+                //PWM_G <= 1'b0;
+                pwm_valueG <= pwm_valueG + INC_DEC_VAL;
+            2: // green
+                //PWM_R <= 1'b1; (red turning off)
+                pwm_valueR <= pwm_valueR - INC_DEC_VAL;
+            3: // cyan
+                //RGB_G = 1'b0; PWM_B <= 1'b0; 
+                pwm_valueB <= pwm_valueB + INC_DEC_VAL;
+            4:begin // blue
+                //PWM_B <= 1'b1;
+                pwm_valueG <= pwm_valueG - INC_DEC_VAL;
+            end
+            5:begin // purple
+                // PWM_R <= 1'b0;
                 pwm_valueR <= pwm_valueR + INC_DEC_VAL;
+            end
 
         endcase
     end

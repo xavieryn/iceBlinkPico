@@ -29,8 +29,6 @@ module top #(
         .pwm_valueR      (pwm_valueR), 
         .pwm_valueG      (pwm_valueG), 
         .pwm_valueB      (pwm_valueB), 
-
-    
     );
 
     pwm #(
@@ -55,7 +53,7 @@ module top #(
         .pwm_out        (pwm_outB)
     );
 
-
+    // IS THIS BECAUSE IT IS ACTIVE LOW?
     assign RGB_R = ~pwm_outR;   
     assign RGB_G = ~pwm_outG;
     assign RGB_B = ~pwm_outB;
