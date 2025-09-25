@@ -6,11 +6,12 @@
 // 'posedge clk' refers to the positive edge of a clock signal
 module fade #(
      // CLK frequency is 12MHz, (the whole loop should be a total of 1 second)
-    parameter INC_DEC_INTERVAL = 2000000, // 1/6 of a second
+    parameter INC_DEC_INTERVAL = 10000, // 1/6 of a second
     // Realizing a bug in code is that the inc_dec_max is what actually affects the pwm (how strong the light is)
     // which means i need to probably add anoother variable that counts once the inc_dec_max gets big enough,
     // then it will add to another variable that will change the color
-    parameter INC_DEC_MAX = 6, // Transition to 6 different stages which happens every 1/6 of a second
+    parameter INC_DEC_MAX = 200, // Transition to 6 different stages which happens every 1/6 of a second
+    parameter STAGE = 6,
     parameter PWM_INTERVAL = 1200, // CLK frequency is 12MHz, so 1,200 cycles is 100us
     parameter INC_DEC_VAL = PWM_INTERVAL / INC_DEC_MAX,
     parameter CLKFREQ = 1200000
@@ -32,12 +33,13 @@ module fade #(
     // Declare variables for timing state transitions
     logic [$clog2(INC_DEC_INTERVAL) - 1:0] count = 0;
     logic [$clog2(INC_DEC_MAX) - 1:0] inc_dec_count = 0;
+    logic [$clog2(STAGE) - 1:0] stage_count = 0;
     logic time_to_inc_dec = 1'b0;
     logic time_to_transition = 1'b0;
 
     // start value (nothing should be on because the pwm is basically saying 0% duty)
     initial begin
-        pwm_valueR = 0;
+        pwm_valueR = 1200; // start max duty because 0 degrees is pure red
         pwm_valueG = 0;
         pwm_valueB = 0;
     end
@@ -77,6 +79,7 @@ module fade #(
     always_ff @(posedge time_to_inc_dec) begin
         if (inc_dec_count == INC_DEC_MAX - 1) begin // if it goes through all 6 counts (mode), then it resets back to the start
             inc_dec_count <= 0;
+            stage_count <= stage_count + 1;
             time_to_transition <= 1'b1;
         end
 
@@ -86,33 +89,29 @@ module fade #(
         end
     end
 
+    // this seems a bit funky
+     always_ff @(posedge time_to_transition) begin
+        if (stage_count == STAGE - 1) begin // if it goes through all 6 counts (mode), then it resets back to the start
+            stage_count <= 0;
+        end
+    end
+
     // Implement counter for timing state transitions
     // 1/6 of a second (values only change when time_to_inc_dec changes)
     always_ff @(posedge time_to_inc_dec) begin
         case(inc_dec_count)
-            0: begin // red
-                //PWM_R <= 1'b0;
-                pwm_valueR <= pwm_valueR + INC_DEC_VAL;
+            0: // red 0 degrees
                 pwm_valueB <= pwm_valueB - INC_DEC_VAL;
-            end
-            1: // yellow
-                //PWM_G <= 1'b0;
+            1: // yellow 60 degrees
                 pwm_valueG <= pwm_valueG + INC_DEC_VAL;
-            2: // green
-                //PWM_R <= 1'b1; (red turning off)
+            2: // green 120 degrees
                 pwm_valueR <= pwm_valueR - INC_DEC_VAL;
-            3: // cyan
-                //RGB_G = 1'b0; PWM_B <= 1'b0; 
+            3: // cyan 180 degrees
                 pwm_valueB <= pwm_valueB + INC_DEC_VAL;
-            4:begin // blue
-                //PWM_B <= 1'b1;
+            4: // blue 240 degrees 
                 pwm_valueG <= pwm_valueG - INC_DEC_VAL;
-            end
-            5:begin // purple
-                // PWM_R <= 1'b0;
+            5: // purple 300 degrees
                 pwm_valueR <= pwm_valueR + INC_DEC_VAL;
-            end
-
         endcase
     end
 endmodule
