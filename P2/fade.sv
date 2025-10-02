@@ -1,9 +1,6 @@
-// Fade
-// USES FINITE STATE MACHINE
 // cd Applications/oss-cad-suite
 // source ./environment
 
-// 'posedge clk' refers to the positive edge of a clock signal
 module fade #(
      // CLK frequency is 12MHz, (the whole loop should be a total of 1 second)
     parameter INC_DEC_INTERVAL = 20000, // Add an extra 0 if you want to visually see the change (200,000)
@@ -35,7 +32,7 @@ module fade #(
 
     // start values
     initial begin
-        pwm_valueR = PWM_INTERVAL; // setting this to maximum because red is 0 degreess
+        pwm_valueR = PWM_INTERVAL; // setting this to maximum because red is 0 degrees
         pwm_valueG = 0;
         pwm_valueB = 0;
     end
