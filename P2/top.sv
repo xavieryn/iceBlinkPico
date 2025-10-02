@@ -10,7 +10,6 @@ module top #(
     output logic    RGB_R,
     output logic    RGB_G,
     output logic    RGB_B
-
 );
 
     logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR;
@@ -20,7 +19,6 @@ module top #(
     logic pwm_outR;
     logic pwm_outG;
     logic pwm_outB;
-
 
     fade #(
         .PWM_INTERVAL   (PWM_INTERVAL)
@@ -53,10 +51,8 @@ module top #(
         .pwm_out        (pwm_outB)
     );
 
-    // IS THIS BECAUSE IT IS ACTIVE LOW?
     assign RGB_R = ~pwm_outR;   
     assign RGB_G = ~pwm_outG;
     assign RGB_B = ~pwm_outB;
-
 
 endmodule

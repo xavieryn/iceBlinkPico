@@ -10,14 +10,12 @@ module fade #(
     parameter PWM_ROUNDS = 100, // 20,000 * 100 * 6 = 12,000,000 (12,000,000 represents 1 second, so we make sure we go through the 360 degrees in 1 second)
     parameter DEGREE_STAGE = 6, // Transition to 6 different stages which happens every 1/6 of a second
     parameter PWM_INTERVAL = 1200, // CLK frequency is 12MHz, so 1,200 cycles is 100us
-    parameter INC_DEC_VAL = PWM_INTERVAL / (PWM_ROUNDS),
-    parameter CLKFREQ = 1200000
+    parameter INC_DEC_VAL = PWM_INTERVAL / (PWM_ROUNDS)
 )(
     input logic clk, 
     output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueR, // max value of 2000000 for RGB
     output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueG, // calculates the minimum number of bits needed to represent 2000000
     output logic [$clog2(PWM_INTERVAL) - 1:0] pwm_valueB  
-
 );
     // Define state variable values
     localparam PWM_INC = 1'b0;
