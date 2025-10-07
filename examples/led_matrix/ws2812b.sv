@@ -10,32 +10,32 @@ module ws2812b(
     localparam IDLE = 1'b0;
     localparam TRANSMITTING = 1'b1;
 
-    localparam T0_CYCLE_COUNT = 4'd5;
-    localparam T1_CYCLE_COUNT = 4'd10;
-    localparam MAX_CYCLE_COUNT = 4'd15;
+    localparam T0_CYCLE_COUNT = 4'd5; // 5 counts (technically could be 3 bits, but consistency)
+    localparam T1_CYCLE_COUNT = 4'd10; // 10 counts
+    localparam MAX_CYCLE_COUNT = 4'd15; // 15 counts
 
     logic state = IDLE;
     logic [3:0] cycle_count = 4'd0;
     logic bit_being_sent = 1'b0;
 
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk) begin // why is this posedge and the controller is neg edge?
         unique case (state)
             IDLE:
-                if (transmit == 1'b1) begin
-                    state <= TRANSMITTING;
-                    cycle_count <= 4'd0;
+                if (transmit == 1'b1) begin // True (from another module)
+                    state <= TRANSMITTING; // set to transmitting, triggering the always comb
+                    cycle_count <= 4'd0; // reset cycle_count
                     bit_being_sent <= serial_in;
                 end
             TRANSMITTING:
                 if (transmit == 1'b0) begin
-                    state <= IDLE;
+                    state <= IDLE; 
                 end
                 else if (cycle_count == MAX_CYCLE_COUNT - 1) begin
                     cycle_count <= 4'd0;
                     bit_being_sent <= serial_in;
                 end
                 else begin
-                    cycle_count <= cycle_count + 1;
+                    cycle_count <= cycle_count + 1; // increase count
                 end
         endcase
     end

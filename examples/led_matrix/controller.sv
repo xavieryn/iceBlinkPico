@@ -34,14 +34,14 @@ module controller (
     assign transmit_pixel_done = (transmit_counter == TRANSMIT_CYCLES - 1);
     assign idle_done = (idle_counter == IDLE_CYCLES - 1);
 
-    always_ff @(negedge clk) begin
+    always_ff @(negedge clk) begin // (negative edge instead of posedge, i wonder why)
         state <= next_state;
         transmit_phase <= next_transmit_phase;
     end
 
     always_comb begin
         next_state = 1'bx;
-        unique case (state)
+        unique case (state) // when state changes (which is every time because it updates with clk)
             TRANSMIT_FRAME:
                 if ((pixel_counter == 6'd0) && (transmit_pixel_done))
                     next_state = IDLE;
@@ -57,7 +57,7 @@ module controller (
 
     always_comb begin
         next_transmit_phase = READ_CH_VALS;
-        if (state == TRANSMIT_FRAME) begin
+        if (state == TRANSMIT_FRAME) begin // when CH_VALS change
             case (transmit_phase)
                 READ_CH_VALS:
                     next_transmit_phase = LOAD_SREG;

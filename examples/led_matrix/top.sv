@@ -3,7 +3,6 @@
 `include "controller.sv"
 
 // led_matrix top level module
-
 module top(
     input logic     clk, 
     input logic     SW, 
@@ -72,22 +71,22 @@ module top(
         .pixel          (pixel), 
         .frame          (frame)
     );
-
-    always_ff @(posedge clk) begin
+    // always check in to see if button is being pressed, if so, go with said data
+    always_ff @(posedge clk) begin 
         if (load_sreg) begin
             unique case ({ SW, BOOT })
                 2'b00:
-                    shift_reg <= { green_data, 16'd0 };
+                    shift_reg <= { green_data, 16'd0 }; // only green
                 2'b01:
-                    shift_reg <= { 8'd0, red_data, 8'd0 };
+                    shift_reg <= { 8'd0, red_data, 8'd0 }; // only red
                 2'b10:
-                    shift_reg <= { 16'd0, blue_data };
+                    shift_reg <= { 16'd0, blue_data }; // only blue
                 2'b11:
-                    shift_reg <= { green_data, red_data, blue_data };
+                    shift_reg <= { green_data, red_data, blue_data }; // not pressed, shows everything
             endcase
         end
         else if (shift) begin
-            shift_reg <= { shift_reg[22:0], 1'b0 };
+            shift_reg <= { shift_reg[22:0], 1'b0 }; 
         end
     end
 
