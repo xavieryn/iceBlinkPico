@@ -1,7 +1,7 @@
 
 module ws2812b(
     input logic clk, 
-    input logic serial_in, 
+    input logic serial_in,  // takes one number in but wy
     input logic transmit, 
     output logic ws2812b_out, 
     output logic shift
@@ -12,10 +12,12 @@ module ws2812b(
 
     localparam T0_CYCLE_COUNT = 4'd5; // 5 counts (technically could be 3 bits, but consistency)
     localparam T1_CYCLE_COUNT = 4'd10; // 10 counts
-    localparam MAX_CYCLE_COUNT = 4'd15; // 15 counts
+    localparam MAX_CYCLE_COUNT = 4'd15; // 15 counts  (5 step increments for different modes?)
 
     logic state = IDLE;
-    logic [3:0] cycle_count = 4'd0;
+    logic [3:0] cycle_count = 4'd0; // accounts for all 3 stages, once one stage gets hit
+    // a var changes to show to only look at the next stage
+
     logic bit_being_sent = 1'b0;
 
     always_ff @(posedge clk) begin // why is this posedge and the controller is neg edge?
@@ -26,7 +28,7 @@ module ws2812b(
                     cycle_count <= 4'd0; // reset cycle_count
                     bit_being_sent <= serial_in;
                 end
-            TRANSMITTING:
+            TRANSMITTING: // switching between tranmitting and idle
                 if (transmit == 1'b0) begin
                     state <= IDLE; 
                 end
@@ -50,6 +52,6 @@ module ws2812b(
             ws2812b_out = 1'b0;
     end
 
-    assign shift = (state == TRANSMITTING) && (cycle_count == 4'd0);
+    assign shift = (state == TRANSMITTING) && (cycle_count == 4'd0); // boolean to see if something should shift
 
 endmodule

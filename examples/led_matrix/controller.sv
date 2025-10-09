@@ -2,7 +2,7 @@
 module controller (
     input logic clk, 
     output logic load_sreg, 
-    output logic transmit_pixel, 
+    output logic transmit_pixel,  // output
     output logic [5:0] pixel, 
     output logic [4:0] frame
 );
@@ -14,7 +14,7 @@ module controller (
     localparam [2:0] LOAD_SREG      = 3'b010;
     localparam [2:0] TRANSMIT_PIXEL = 3'b100;
 
-    localparam [8:0] TRANSMIT_CYCLES    = 9'd360;       // = 24 bits / pixel x 15 cycles / bit
+    localparam [8:0] TRANSMIT_CYCLES    = 9'd360;       // = 24 bits / pixel x 15 cycles / bit (24 * 15 = 360)
     localparam [19:0] IDLE_CYCLES       = 20'd351832;   // = 375000 - 64 x (360 + 2) for 32 frames / second
 
     logic state = TRANSMIT_FRAME;
@@ -23,7 +23,7 @@ module controller (
     logic [2:0] transmit_phase = READ_CH_VALS;
     logic [2:0] next_transmit_phase;
 
-    logic [5:0] pixel_counter = 6'd63;
+    logic [5:0] pixel_counter = 6'd63; // pixel stands for each light on the led board
     logic [4:0] frame_counter = 5'd0;
     logic [8:0] transmit_counter = 9'd0;
     logic [19:0] idle_counter = 20'd0;
@@ -71,7 +71,7 @@ module controller (
 
     always_ff @(negedge clk) begin
         if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin
-            pixel_counter <= pixel_counter - 1;
+            pixel_counter <= pixel_counter - 1; // why does pixel counter decrement
         end
     end
 
@@ -99,10 +99,14 @@ module controller (
         end
     end
 
+    // assign keywords means it is updated everytime any of the variables change (like always comb)
+    // these are the outputs that get sent back to top
     assign pixel = pixel_counter;
     assign frame = frame_counter;
 
-    assign load_sreg = (transmit_phase == LOAD_SREG);
-    assign transmit_pixel = (transmit_phase == TRANSMIT_PIXEL);
+    assign load_sreg = (transmit_phase == LOAD_SREG); // if it equals LOAD_SREG, then true
+    assign transmit_pixel = (transmit_phase == TRANSMIT_PIXEL); // boolean
+
+
 
 endmodule

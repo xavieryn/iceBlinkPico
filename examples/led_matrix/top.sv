@@ -7,7 +7,7 @@ module top(
     input logic     clk, 
     input logic     SW, 
     input logic     BOOT, 
-    output logic    _48b, 
+    output logic    _48b, // PLUG INTO 48B for getting the spiral
     output logic    _45a
 );
 
@@ -19,7 +19,7 @@ module top(
     logic [4:0] frame;
     logic [10:0] address;
 
-    logic [23:0] shift_reg = 24'd0;
+    logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
     logic load_sreg;
     logic transmit_pixel;
     logic shift;
@@ -29,7 +29,7 @@ module top(
 
     // Instance sample memory for red channel
     memory #(
-        .INIT_FILE      ("spiral/red.txt")
+        .INIT_FILE      ("spiral/red.txt") // just a text file that feeds what to set the value to (why 2048 values tho)
     ) u1 (
         .clk            (clk), 
         .read_address   (address), 
@@ -55,10 +55,10 @@ module top(
     );
 
     // Instance the WS2812B output driver
-    ws2812b u4 (
+    ws2812b u4 ( // interesting, from the module in top, you don't know if something is input or output
         .clk            (clk), 
-        .serial_in      (shift_reg[23]), 
-        .transmit       (transmit_pixel), 
+        .serial_in      (shift_reg[23]),  // sending 24th bit
+        .transmit       (transmit_pixel), // input
         .ws2812b_out    (ws2812b_out), 
         .shift          (shift)
     );
@@ -67,14 +67,14 @@ module top(
     controller u5 (
         .clk            (clk), 
         .load_sreg      (load_sreg), 
-        .transmit_pixel (transmit_pixel), 
+        .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel), 
         .frame          (frame)
     );
     // always check in to see if button is being pressed, if so, go with said data
     always_ff @(posedge clk) begin 
         if (load_sreg) begin
-            unique case ({ SW, BOOT })
+            unique case ({ SW, BOOT }) // when all values are set to 0, that means it won't be changed
                 2'b00:
                     shift_reg <= { green_data, 16'd0 }; // only green
                 2'b01:
@@ -86,7 +86,7 @@ module top(
             endcase
         end
         else if (shift) begin
-            shift_reg <= { shift_reg[22:0], 1'b0 }; 
+            shift_reg <= { shift_reg[22:0], 1'b0 };  // sending 24 bits
         end
     end
 

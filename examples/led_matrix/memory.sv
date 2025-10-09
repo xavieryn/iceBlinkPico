@@ -10,11 +10,11 @@ module memory #(
     logic [7:0] mem [0:2047];
 
     initial if (INIT_FILE) begin // if it finds the file (fed in from top.sv when initialized)
-        $readmemh(INIT_FILE, mem);
+        $readmemh(INIT_FILE, mem); // reads the file
     end
 
     always_ff @(posedge clk) begin // read what is written
-        read_data <= mem[read_address];
+        read_data <= mem[read_address]; // reads the data and saves it to read_data
     end
 
 endmodule
