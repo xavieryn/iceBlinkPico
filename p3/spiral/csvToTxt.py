@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-filepath = "p3/spiral/"
+filepath = "/Applications/oss-cad-suite/iceBlinkPico/p3/spiral/"
 filename = input("csv pls: ")
 df = pd.read_csv(filepath+filename+'.csv')
 print(df)
