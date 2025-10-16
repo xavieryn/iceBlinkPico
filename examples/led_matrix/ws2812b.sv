@@ -1,3 +1,4 @@
+// I don't think this module has anything to do with conways game of life
 
 module ws2812b(
     input logic clk, 

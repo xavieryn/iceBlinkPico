@@ -7,7 +7,7 @@ module memory #(
     output logic [7:0] read_data
 );
 
-    logic [7:0] mem [0:2047];
+    logic [7:0] mem [0:63];
 
     initial if (INIT_FILE) begin // if it finds the file (fed in from top.sv when initialized)
         $readmemh(INIT_FILE, mem); // reads the file

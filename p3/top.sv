@@ -31,27 +31,27 @@ module top(
     memory #(
         .INIT_FILE      ("spiral/red.txt") // just a text file that feeds what to set the value to (why 2048 values tho)
     ) u1 (
-        .clk            (clk), 
-        .read_address   (address), 
-        .read_data      (red_data)
+        .clk            (clk), // input
+        .read_address   (address), // input (letting us know where to actually find and read the data)
+        .read_data      (red_data) // output
     );
 
     // Instance sample memory for green channel
     memory #(
         .INIT_FILE      ("spiral/green.txt")
     ) u2 (
-        .clk            (clk), 
-        .read_address   (address), 
-        .read_data      (green_data)
+        .clk            (clk), // input
+        .read_address   (address), // input 
+        .read_data      (green_data) // output  (saving the data to here)
     );
 
     // Instance sample memory for blue channel
     memory #(
         .INIT_FILE      ("spiral/blue.txt")
     ) u3 (
-        .clk            (clk), 
-        .read_address   (address), 
-        .read_data      (blue_data)
+        .clk            (clk), // input
+        .read_address   (address), // input
+        .read_data      (blue_data) // output
     );
 
     // Instance the WS2812B output driver
@@ -66,7 +66,7 @@ module top(
     // Instance the controller
     controller u5 (
         .clk            (clk), 
-        .load_sreg      (load_sreg), 
+        .load_sreg      (load_sreg), // input
         .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel), 
         .frame          (frame)
