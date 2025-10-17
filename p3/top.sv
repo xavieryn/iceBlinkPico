@@ -11,12 +11,11 @@ module top(
     output logic    _45a
 );
 
-    logic [7:0] red_data;
-    logic [7:0] green_data;
-    logic [7:0] blue_data;
+    logic [7:0] red_data; // 8 bits
+    logic [7:0] green_data; // 8 bits
+    logic [7:0] blue_data; // 8 bits
 
     logic [5:0] pixel;
-    logic [4:0] frame;
     logic [10:0] address;
 
     logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
@@ -25,7 +24,7 @@ module top(
     logic shift;
     logic ws2812b_out;
 
-    assign address = { frame, pixel };
+    assign address = { pixel };
 
     // Instance sample memory for red channel
     memory #(
@@ -33,7 +32,7 @@ module top(
     ) u1 (
         .clk            (clk), // input
         .read_address   (address), // input (letting us know where to actually find and read the data)
-        .read_data      (red_data) // output
+        .read_data      (red_data) // output, reads and outputs one bit, increments, reads and outputs one bit, increments
     );
 
     // Instance sample memory for green channel
@@ -68,11 +67,10 @@ module top(
         .clk            (clk), 
         .load_sreg      (load_sreg), // input
         .transmit_pixel (transmit_pixel), // output
-        .pixel          (pixel), 
-        .frame          (frame)
+        .pixel          (pixel)
     );
     // always check in to see if button is being pressed, if so, go with said data
-    always_ff @(posedge clk) begin 
+    always_ff @(posedge clk) begin  // sending one pixel each posedge and only if it is loading
         if (load_sreg) begin
             unique case ({ SW, BOOT }) // when all values are set to 0, that means it won't be changed
                 2'b00:
@@ -85,7 +83,7 @@ module top(
                     shift_reg <= { green_data, red_data, blue_data }; // not pressed, shows everything
             endcase
         end
-        else if (shift) begin
+        else if (shift) begin // if time to shift 
             shift_reg <= { shift_reg[22:0], 1'b0 };  // sending 24 bits
         end
     end

@@ -4,7 +4,6 @@ module controller (
     output logic load_sreg, 
     output logic transmit_pixel,  // output
     output logic [5:0] pixel, 
-    output logic [4:0] frame
 );
 
     localparam TRANSMIT_FRAME       = 1'b0;
@@ -15,7 +14,11 @@ module controller (
     localparam [2:0] TRANSMIT_PIXEL = 3'b100;
 
     localparam [8:0] TRANSMIT_CYCLES    = 9'd360;       // = 24 bits / pixel x 15 cycles / bit (24 * 15 = 360)
-    localparam [19:0] IDLE_CYCLES       = 20'd351832;   // = 375000 - 64 x (360 + 2) for 32 frames / second
+    localparam [19:0] IDLE_CYCLES       = 20'3976832;   // =  (375000 - 64 x (360 + 2) for 32 frames / second) brad's math
+    // 12 million = 1 second (12 million / 32 = 375000) which explains how many clock edges for one frame
+    // 12 000 000 / 3 (3 fps) = 4 000 000 - 64 * (360 + 2) = 3 976 832 
+    // should be idle for this long for 3 fps
+    // total number of clock cycles in code for a whole frame
 
     logic state = TRANSMIT_FRAME;
     logic next_state;
@@ -23,10 +26,9 @@ module controller (
     logic [2:0] transmit_phase = READ_CH_VALS;
     logic [2:0] next_transmit_phase;
 
-    logic [5:0] pixel_counter = 6'd63; // pixel stands for each light on the led board
-    logic [4:0] frame_counter = 5'd0;
+    logic [5:0] pixel_counter = 6'd0; // pixel stands for each light on the led board
     logic [8:0] transmit_counter = 9'd0;
-    logic [19:0] idle_counter = 20'd0;
+    logic [19:0] idle_counter = 20'd0; // = 375000 - 64 x (360 + 2) for 32 frames / second we want it to be idle for longer
 
     logic transmit_pixel_done;
     logic idle_done;
@@ -76,8 +78,13 @@ module controller (
     end
 
     always_ff @(negedge clk) begin
+        // if (not idle_done) begin
+        //     nextframe = 0
+        // end
+
         if (idle_done) begin
-            frame_counter <= frame_counter + 1;
+            // go to next frame 
+            // flip flop 
         end
     end
 
@@ -102,7 +109,6 @@ module controller (
     // assign keywords means it is updated everytime any of the variables change (like always comb)
     // these are the outputs that get sent back to top
     assign pixel = pixel_counter;
-    assign frame = frame_counter;
 
     assign load_sreg = (transmit_phase == LOAD_SREG); // if it equals LOAD_SREG, then true
     assign transmit_pixel = (transmit_phase == TRANSMIT_PIXEL); // boolean
