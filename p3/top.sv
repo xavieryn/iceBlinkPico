@@ -16,7 +16,6 @@ module top(
     logic [7:0] blue_data; // 8 bits
 
     logic [5:0] pixel;
-    logic [10:0] address;
 
     logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
     logic load_sreg;
@@ -24,7 +23,7 @@ module top(
     logic shift;
     logic ws2812b_out;
 
-    assign address = { pixel };
+    assign address = { pixel }; // we only have 1 frame, so just the one 64 pixels
 
     // Instance sample memory for red channel
     memory #(

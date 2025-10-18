@@ -3,7 +3,7 @@ module memory #(
     parameter INIT_FILE = ""
 )(
     input logic clk,
-    input logic [10:0] read_address,
+    input logic [5:0] read_address, // does not need to be this long
     output logic [7:0] read_data
 );
 
