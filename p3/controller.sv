@@ -27,6 +27,8 @@ module controller (
     logic [2:0] next_transmit_phase;
 
     logic [5:0] pixel_counter = 6'd0; // pixel stands for each light on the led board
+    // pixel_counter doesn't need to get reset because it rolls over to 0 because it is a power of 2 so once its all 1's, then
+    // it overflows and just reaches 0. 
     logic [8:0] transmit_counter = 9'd0;
     logic [19:0] idle_counter = 20'd0; // = 375000 - 64 x (360 + 2) for 32 frames / second we want it to be idle for longer
 
@@ -45,7 +47,7 @@ module controller (
         next_state = 1'bx;
         unique case (state) // when state changes (which is every time because it updates with clk)
             TRANSMIT_FRAME:
-                if ((pixel_counter == 6'd0) && (transmit_pixel_done))
+                if ((pixel_counter == 6'd63) && (transmit_pixel_done))
                     next_state = IDLE;
                 else
                     next_state = TRANSMIT_FRAME;
@@ -73,17 +75,22 @@ module controller (
 
     always_ff @(negedge clk) begin
         if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin
-            pixel_counter <= pixel_counter - 1; // why does pixel counter decrement
+            pixel_counter <= pixel_counter + 1; // why does pixel counter decrement
         end
     end
 
     always_ff @(negedge clk) begin
+
+        // when idle_counter == 1
+        // we know that next frame should be true, because it is already added all 64 and is just waiting, so loads next 64
+
         // if (not idle_done) begin
         //     nextframe = 0
         // end
 
         if (idle_done) begin
             // go to next frame 
+            // nextframe = 1 
             // flip flop 
         end
     end

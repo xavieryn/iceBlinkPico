@@ -69,6 +69,21 @@ module top(
         .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel)
     );
+
+    gameOfLife u6 ( 
+        .clk            (clk), // input
+        .next_frame     (next_frame), // input
+        // feed bit by bit 
+        .green_data     (green_data), // input
+        .red_data     (red_data), // input
+        .blue_data     (blue_data), // input
+
+        .green_data_output     (green_data_output), // output
+        .red_data_output     (red_data_output), // output
+        .blue_data_output     (blue_data_output), // output 
+
+
+    )
     // always check in to see if button is being pressed, if so, go with said data
     always_ff @(posedge clk) begin  // sending one pixel each posedge and only if it is loading
         if (load_sreg) begin
