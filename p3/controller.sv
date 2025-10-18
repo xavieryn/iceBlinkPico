@@ -8,6 +8,7 @@ module controller (
 
     localparam TRANSMIT_FRAME       = 1'b0;
     localparam IDLE                 = 1'b1;
+    localparam COMPUTE_NEXT         = 1'b1; // adding another param
 
     localparam [2:0] READ_CH_VALS   = 3'b001;
     localparam [2:0] LOAD_SREG      = 3'b010;
@@ -34,6 +35,7 @@ module controller (
 
     logic transmit_pixel_done;
     logic idle_done;
+    logic compute_next_done;
 
     assign transmit_pixel_done = (transmit_counter == TRANSMIT_CYCLES - 1);
     assign idle_done = (idle_counter == IDLE_CYCLES - 1);
@@ -51,11 +53,17 @@ module controller (
                     next_state = IDLE;
                 else
                     next_state = TRANSMIT_FRAME;
-            IDLE:
+            IDLE: // will be idle for most of the time because the fps is so low
                 if (idle_done)
+                    next_state = COMPUTE_NEXT;
+                else
+                    next_state = COMPUTE_NEXT;
+            COMPUTE_NEXT: // for updating the next state 
+                if (compute_next)
                     next_state = TRANSMIT_FRAME;
                 else
-                    next_state = IDLE;
+                    next_state = TRANSMIT_FRAME;
+            
         endcase
     end
 
@@ -75,7 +83,7 @@ module controller (
 
     always_ff @(negedge clk) begin
         if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin
-            pixel_counter <= pixel_counter + 1; // why does pixel counter decrement
+            pixel_counter <= pixel_counter + 1;
         end
     end
 
@@ -116,7 +124,6 @@ module controller (
     // assign keywords means it is updated everytime any of the variables change (like always comb)
     // these are the outputs that get sent back to top
     assign pixel = pixel_counter;
-
     assign load_sreg = (transmit_phase == LOAD_SREG); // if it equals LOAD_SREG, then true
     assign transmit_pixel = (transmit_phase == TRANSMIT_PIXEL); // boolean
 
