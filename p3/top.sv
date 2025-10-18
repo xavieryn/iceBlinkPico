@@ -15,6 +15,10 @@ module top(
     logic [7:0] green_data; // 8 bits
     logic [7:0] blue_data; // 8 bits
 
+    logic [7:0] write_red_data; // 8 bits
+    logic [7:0] write_green_data; // 8 bits
+    logic [7:0] write_blue_data; // 8 bits
+
     logic [5:0] pixel;
 
     logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
@@ -30,7 +34,9 @@ module top(
         .INIT_FILE      ("spiral/red.txt") // just a text file that feeds what to set the value to (why 2048 values tho)
     ) u1 (
         .clk            (clk), // input
+        .write_enable   (write_enable), // input
         .read_address   (address), // input (letting us know where to actually find and read the data)
+        .write_data     (write_red_data),
         .read_data      (red_data) // output, reads and outputs one bit, increments, reads and outputs one bit, increments
     );
 
@@ -39,7 +45,9 @@ module top(
         .INIT_FILE      ("spiral/green.txt")
     ) u2 (
         .clk            (clk), // input
+        .write_enable   (write_enable), //input
         .read_address   (address), // input 
+        .write_data     (write_green_data), // input
         .read_data      (green_data) // output  (saving the data to here)
     );
 
@@ -48,7 +56,9 @@ module top(
         .INIT_FILE      ("spiral/blue.txt")
     ) u3 (
         .clk            (clk), // input
+        .write_enable   (write_enable), // input
         .read_address   (address), // input
+        .write_data     (write_blue_data), // input
         .read_data      (blue_data) // output
     );
 
@@ -63,38 +73,31 @@ module top(
 
     // Instance the controller
     controller u5 (
-        .clk            (clk), 
+        .clk            (clk), // input
         .load_sreg      (load_sreg), // input
         .transmit_pixel (transmit_pixel), // output
-        .pixel          (pixel)
+        .pixel          (pixel) // output
     );
 
-    gameOfLife u6 ( 
+    gameOfLife u6 ( // green
         .clk            (clk), // input
         .next_frame     (next_frame), // input
-        // feed bit by bit 
-        .green_data     (green_data), // input
-        .red_data     (red_data), // input
-        .blue_data     (blue_data), // input
-
-        .green_data_output     (green_data_output), // output
-        .red_data_output     (red_data_output), // output
-        .blue_data_output     (blue_data_output), // output 
-
-
+        .data_input     (data), // input (FOR NOW WE ASSUME THAT THE COLORS VALUES ARE ALL THE SAME)
+        .data_output     (output), // output
     )
+
     // always check in to see if button is being pressed, if so, go with said data
     always_ff @(posedge clk) begin  // sending one pixel each posedge and only if it is loading
         if (load_sreg) begin
             unique case ({ SW, BOOT }) // when all values are set to 0, that means it won't be changed
                 2'b00:
-                    shift_reg <= { green_data, 16'd0 }; // only green
+                    shift_reg <= { green_data_output, 16'd0 }; // only green
                 2'b01:
                     shift_reg <= { 8'd0, red_data, 8'd0 }; // only red
                 2'b10:
                     shift_reg <= { 16'd0, blue_data }; // only blue
                 2'b11:
-                    shift_reg <= { green_data, red_data, blue_data }; // not pressed, shows everything
+                    shift_reg <= { green_data_output, red_data, blue_data }; // not pressed, shows everything
             endcase
         end
         else if (shift) begin // if time to shift 

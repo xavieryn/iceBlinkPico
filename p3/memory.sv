@@ -3,7 +3,9 @@ module memory #(
     parameter INIT_FILE = ""
 )(
     input logic clk,
-    input logic [5:0] read_address, // does not need to be this long
+    input logic write_enable,
+    input logic [5:0] read_address, 
+    input logic [7:0] write_data,
     output logic [7:0] read_data
 );
 
@@ -14,6 +16,8 @@ module memory #(
     end
 
     always_ff @(posedge clk) begin // read what is written
+        if write_enable 
+            mem[write_address] <= write_data; // once it gets past the intial
         read_data <= mem[read_address]; // reads the data and saves it to read_data (reads only 8 bit)
     end
 
