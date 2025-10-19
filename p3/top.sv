@@ -33,7 +33,7 @@ module top(
 
     // Instance sample memory for red channel
     memory #(
-        .INIT_FILE      ("spiral/red.txt") // just a text file that feeds what to set the value to (why 2048 values tho)
+        .INIT_FILE      ("resources/red.txt") // just a text file that feeds what to set the value to (why 2048 values tho)
     ) u1 (
         .clk            (clk), // input
         .write_enable   (write_enable), // input
@@ -44,7 +44,7 @@ module top(
 
     // Instance sample memory for green channel
     memory #(
-        .INIT_FILE      ("spiral/green.txt")
+        .INIT_FILE      ("resources/green.txt")
     ) u2 (
         .clk            (clk), // input
         .write_enable   (write_enable), //input
@@ -55,7 +55,7 @@ module top(
 
     // Instance sample memory for blue channel
     memory #(
-        .INIT_FILE      ("spiral/blue.txt")
+        .INIT_FILE      ("resources/blue.txt")
     ) u3 (
         .clk            (clk), // input
         .write_enable   (write_enable), // input
@@ -86,7 +86,7 @@ module top(
     gameOfLife u6 ( // green
         .clk            (clk), // input
         .next_frame     (next_frame), // input from controller
-        .read_address   (address), // input (letting us know where to actually find and read the data)
+        .data_input   (green_data), // input (letting us know where to actually find and read the data)
         .data_output    (game_output) // output
     );
 

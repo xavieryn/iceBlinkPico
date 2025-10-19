@@ -1,7 +1,7 @@
 module gameOfLife ( 
         input logic clk,
         input logic next_frame,
-        input logic read_address,
+        input logic data_input, // right now this is only the address
         output logic data_output 
 );
     /*
@@ -24,8 +24,8 @@ module gameOfLife (
             pixel_counter = 0;
             for (int i = 0; i < 64; i++) begin
                 if (i + 1 % 8 == 0)
-                    counter ++; 
-                old_grid[counter][i%8] = data;
+                    pixel_counter ++; 
+                old_grid[pixel_counter][i%8] = data_input;
             end
             for (int row = 0; row < 8; row++) begin
                 for (int col = 0; col < 8; col++) begin
