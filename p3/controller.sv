@@ -52,6 +52,7 @@ module controller (
 
     always_comb begin
         next_state = 1'bx;
+        next_frame = 0;
         unique case (state) // when state changes (which is every time because it updates with clk)
             TRANSMIT_FRAME: // each pixel by each pixel 
                 if ((pixel_counter == 6'd63) && (transmit_pixel_done))

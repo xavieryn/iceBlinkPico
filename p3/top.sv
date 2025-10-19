@@ -86,7 +86,8 @@ module top(
     gameOfLife u6 ( // green
         .clk            (clk), // input
         .next_frame     (next_frame), // input from controller
-        .data_input   (green_data), // input (letting us know where to actually find and read the data)
+        .read_address   (address),
+        .data_input     (green_data), // input (letting us know where to actually find and read the data)
         .data_output    (game_output) // output
     );
 
