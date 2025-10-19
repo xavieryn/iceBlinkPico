@@ -1,6 +1,7 @@
 `include "memory.sv"
 `include "ws2812b.sv"
 `include "controller.sv"
+`include "gameOfLife.sv"
 
 // led_matrix top level module
 module top(
@@ -14,12 +15,13 @@ module top(
     logic [7:0] red_data; // 8 bits
     logic [7:0] green_data; // 8 bits
     logic [7:0] blue_data; // 8 bits
+    logic [7:0] game_output; 
 
     logic [7:0] write_red_data; // 8 bits
     logic [7:0] write_green_data; // 8 bits
     logic [7:0] write_blue_data; // 8 bits
 
-    logic [5:0] pixel;
+    logic [5:0] pixel; // 64 digits (frame)
 
     logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
     logic load_sreg;
@@ -75,16 +77,18 @@ module top(
     controller u5 (
         .clk            (clk), // input
         .load_sreg      (load_sreg), // input
+        .write_enable   (write_enable), // output
+        .next_frame    (next_frame), // output 
         .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel) // output
     );
 
     gameOfLife u6 ( // green
         .clk            (clk), // input
-        .next_frame     (next_frame), // input
-        .data_input     (data), // input (FOR NOW WE ASSUME THAT THE COLORS VALUES ARE ALL THE SAME)
-        .data_output     (output), // output
-    )
+        .next_frame     (next_frame), // input from controller
+        .read_address   (address), // input (letting us know where to actually find and read the data)
+        .data_output    (game_output) // output
+    );
 
     // always check in to see if button is being pressed, if so, go with said data
     always_ff @(posedge clk) begin  // sending one pixel each posedge and only if it is loading

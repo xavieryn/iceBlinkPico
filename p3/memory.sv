@@ -8,7 +8,6 @@ module memory #(
     input logic [7:0] write_data,
     output logic [7:0] read_data
 );
-
     logic [7:0] mem [0:63];
 
     initial if (INIT_FILE) begin // if it finds the file (fed in from top.sv when initialized)
@@ -16,8 +15,9 @@ module memory #(
     end
 
     always_ff @(posedge clk) begin // read what is written
-        if write_enable 
-            mem[write_address] <= write_data; // once it gets past the intial
+        if (write_enable)  begin
+            mem[read_address] <= write_data; // once it gets past the intial
+        end
         read_data <= mem[read_address]; // reads the data and saves it to read_data (reads only 8 bit)
     end
 
