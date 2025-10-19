@@ -22,23 +22,26 @@ module top(
     logic [7:0] write_blue_data; // 8 bits
 
     logic [5:0] pixel; // 64 digits (frame)
+    logic [5:0] address;
 
     logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
     logic load_sreg;
     logic transmit_pixel;
     logic shift;
     logic ws2812b_out;
+    logic next_frame;
+    logic write_enable;
 
-    assign address = { pixel }; // we only have 1 frame, so just the one 64 pixels
+    assign address =  pixel; // we only have 1 frame, so just the one 64 pixels
 
     // Instance sample memory for red channel
     memory #(
-        .INIT_FILE      ("resources/red.txt") // just a text file that feeds what to set the value to (why 2048 values tho)
+        .INIT_FILE      ("resources/red.txt") 
     ) u1 (
         .clk            (clk), // input
         .write_enable   (write_enable), // input
         .read_address   (address), // input (letting us know where to actually find and read the data)
-        .write_data     (write_red_data),
+        .write_data     (game_output), // input
         .read_data      (red_data) // output, reads and outputs one bit, increments, reads and outputs one bit, increments
     );
 
@@ -49,7 +52,7 @@ module top(
         .clk            (clk), // input
         .write_enable   (write_enable), //input
         .read_address   (address), // input 
-        .write_data     (write_green_data), // input
+        .write_data     (game_output), // input
         .read_data      (green_data) // output  (saving the data to here)
     );
 
@@ -60,7 +63,7 @@ module top(
         .clk            (clk), // input
         .write_enable   (write_enable), // input
         .read_address   (address), // input
-        .write_data     (write_blue_data), // input
+        .write_data     (game_output), // input
         .read_data      (blue_data) // output
     );
 
@@ -78,7 +81,7 @@ module top(
         .clk            (clk), // input
         .load_sreg      (load_sreg), // input
         .write_enable   (write_enable), // output
-        .next_frame    (next_frame), // output 
+        .next_frame    ( next_frame), // output 
         .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel) // output
     );
@@ -96,13 +99,13 @@ module top(
         if (load_sreg) begin
             unique case ({ SW, BOOT }) // when all values are set to 0, that means it won't be changed
                 2'b00:
-                    shift_reg <= { green_data_output, 16'd0 }; // only green
+                    shift_reg <= { game_output, 16'd0 }; // only green
                 2'b01:
-                    shift_reg <= { 8'd0, red_data, 8'd0 }; // only red
+                    shift_reg <= { 8'd0, game_output, 8'd0 }; // only red
                 2'b10:
-                    shift_reg <= { 16'd0, blue_data }; // only blue
+                    shift_reg <= { 16'd0, game_output }; // only blue
                 2'b11:
-                    shift_reg <= { green_data_output, red_data, blue_data }; // not pressed, shows everything
+                    shift_reg <= { game_output, game_output, game_output }; // not pressed, shows everything
             endcase
         end
         else if (shift) begin // if time to shift 

@@ -8,9 +8,8 @@ module controller (
     output logic [5:0] pixel 
 );
 
-    localparam TRANSMIT_FRAME       = 2'b0;
-    localparam IDLE                 = 2'b1;
-    localparam COMPUTE_NEXT         = 2'b10; // adding another param
+    localparam TRANSMIT_FRAME       = 1'b0;
+    localparam IDLE                 = 1'b1;
 
     localparam [2:0] READ_CH_VALS   = 3'b001;
     localparam [2:0] LOAD_SREG      = 3'b010;
@@ -25,7 +24,6 @@ module controller (
 
     logic state = TRANSMIT_FRAME;
     logic next_state;
-    logic next_frame;
 
     logic [2:0] transmit_phase = READ_CH_VALS;
     logic [2:0] next_transmit_phase;
@@ -51,12 +49,12 @@ module controller (
     end
 
     always_comb begin
-        next_state = 1'bx;
         next_frame = 0;
         unique case (state) // when state changes (which is every time because it updates with clk)
             TRANSMIT_FRAME: // each pixel by each pixel 
                 if ((pixel_counter == 6'd63) && (transmit_pixel_done))
                     next_state = IDLE; 
+                    next_frame = 1;
                 else
                     next_state = TRANSMIT_FRAME;
             IDLE: // will be idle for most of the time because the fps is so low
@@ -64,14 +62,6 @@ module controller (
                     next_state = COMPUTE_NEXT;
                 else
                     next_state = IDLE;
-            COMPUTE_NEXT: // for updating the next state 
-                if (compute_next_done) begin
-                    next_frame = 1;
-                    next_state = TRANSMIT_FRAME;
-                end
-                else
-                    next_state = COMPUTE_NEXT;
-            
         endcase
     end
 
@@ -92,6 +82,8 @@ module controller (
     always_ff @(negedge clk) begin
         if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin
             pixel_counter <= pixel_counter + 1;
+            write_enable <= 1;
+
         end
     end
 
@@ -114,10 +106,9 @@ module controller (
     end
 
     always_ff @(negedge clk) begin
-        if (state == COMPUTE_NEXT) begin
+        if (state == TRANSMIT_FRAME) begin
             write_enable <= 1;
-            pixel_counter <= pixel_counter + 1;
-            if (compute_next_done) begin
+|            if (compute_next_done) begin
                 next_frame <= 1;
                 pixel_counter <= 0; // reset for next phase
             end else begin
