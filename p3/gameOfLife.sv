@@ -13,62 +13,68 @@ module gameOfLife (
     4) Reproduction: A dead cell with exactly three neighbors becomes alive
     */
 
-    localparam TRANSMIT = 1'b0;
-    localparam COMPUTEANDSEND = 1'b1;
+    localparam TRANSMIT = 2'b0;
+    localparam COMPUTEANDSEND = 2'b1;
+    localparam IDLE = 2'b10;
 
     // Two 8x8 grids for double buffering
     logic [7:0] current_grid [0:7][0:7];  // Current state
     logic [7:0] computed_grid [0:7][0:7]; // Computed next state
-    
     // Extract row and column from address
     logic [2:0] row, col;
     logic [5:0] pixel_counter = 6'd0; // pixel stands for each light on the led board
+    logic [2:0] r;
+    logic [2:0] c;
     logic accumulated = 1'b0;
+    logic state = IDLE;
+    logic next_state;
 
     assign row = read_address[5:3];  // Upper 3 bits
     assign col = read_address[2:0];  // Lower 3 bits
     
-    always_ff @(posedge clk) begin // (negative edge instead of posedge, i wonder why)
+    always_ff @(posedge clk) begin 
         state <= next_state;
     end
 
     always_comb begin
         unique case(state)
+            IDLE:
+                if (next_frame)
+                    next_state = TRANSMIT;
+                else
+                    next_state = IDLE;
             TRANSMIT:
-                if (pixel_counter == 6'd63)
+                if (!next_frame) // maybe we don't do the pixel counter for this because it might lead to issue, so see when its done transmitting
                     next_state = COMPUTEANDSEND;
-                else if 
+                else 
                     next_state = TRANSMIT;
             COMPUTEANDSEND: 
                 if (pixel_counter == 6'd63)
                     next_state = TRANSMIT;
                 else 
-                    next_state = COMPUTE;
+                    next_state = IDLE;
         endcase
     end
     
     always_ff @(posedge clk) begin
-        if (next_frame)
-            pixel_counter <= pixel_counter + 1;
-        
+        if (state != IDLE)
+            pixel_counter <= pixel_counter + 1; // will roll over to 0 once it goes over
     end
 
     // Neighbor counting variable
-    logic [3:0] neighbor_count = 4'd0;  // 0-8 neighbors max
     always_ff @(posedge clk) begin
-        if (next_frame && pixel_counter < 64) begin
+        if (state == TRANSMIT) begin
             current_grid[row][col] <= data_input;
-            pixel_counter <= pixel_counter + 1;
         end
-        else
-            pixel_counter = 0;
-            accumulated = 1;
     end
 
-    always_ff @(posedge clk) begin
+    logic [3:0] neighbor_count = 4'd0;  // 0-8 neighbors max
+    always_ff @(posedge clk) begin // will run 64 times
         // dont run this until the current_grid is fully created
         // no nested for loops and instead do a counter, and that iterates through all pixels
-        if (accumulated) begin
+        if (state == COMPUTEANDSEND) begin
+                    r = pixel_counter[5:3];
+                    c = pixel_counter[2:0];
                     neighbor_count = 0;
                     // Count all 8 neighbors (with boundary checking)
                     if (r > 0 && c > 0 && current_grid[r-1][c-1] > 8'h00) 
@@ -102,11 +108,10 @@ module gameOfLife (
                         else
                             computed_grid[r][c] <= 8'h00;  // Stays dead
                     end
+                    data_output <= computed_grid[r][c];
 
         end
     end
-    
-    // Output the computed grid at the requested address
-    assign data_output = computed_grid[row][col];
+
 
 endmodule

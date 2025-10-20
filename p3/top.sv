@@ -81,12 +81,12 @@ module top(
         .clk            (clk), // input
         .load_sreg      (load_sreg), // input
         .write_enable   (write_enable), // output
-        .next_frame    ( next_frame), // output 
+        .next_frame     (next_frame), // output 
         .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel) // output
     );
 
-    gameOfLife u6 ( // green
+    gameOfLife u6 ( // 
         .clk            (clk), // input
         .next_frame     (next_frame), // input from controller
         .read_address   (address),

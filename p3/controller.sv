@@ -1,6 +1,7 @@
 
 module controller (
     input logic clk, 
+    input logic idleReady,
     output logic load_sreg, 
     output logic write_enable, 
     output logic next_frame,
@@ -36,11 +37,9 @@ module controller (
 
     logic transmit_pixel_done;
     logic idle_done;
-    logic compute_next_done;
 
     assign transmit_pixel_done = (transmit_counter == TRANSMIT_CYCLES - 1);
     assign idle_done = (idle_counter == IDLE_CYCLES - 1);
-    assign compute_next_done = (pixel_counter == 63);
 
 
     always_ff @(negedge clk) begin // (negative edge instead of posedge, i wonder why)
@@ -52,14 +51,17 @@ module controller (
         next_frame = 0;
         unique case (state) // when state changes (which is every time because it updates with clk)
             TRANSMIT_FRAME: // each pixel by each pixel 
-                if ((pixel_counter == 6'd63) && (transmit_pixel_done))
+                if ((pixel_counter == 6'd63) && (transmit_pixel_done) ) begin
                     next_state = IDLE; 
-                    next_frame = 1;
-                else
+                    next_frame = 0;
+                end
+                else begin
                     next_state = TRANSMIT_FRAME;
+                    next_frame = 1; // transmitting next frame to game of life
+                end
             IDLE: // will be idle for most of the time because the fps is so low
                 if (idle_done)
-                    next_state = COMPUTE_NEXT;
+                    next_state = TRANSMIT_FRAME;
                 else
                     next_state = IDLE;
         endcase
@@ -80,7 +82,7 @@ module controller (
     end
 
     always_ff @(negedge clk) begin
-        if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin
+        if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin // does not count pixel up until transmit is done
             pixel_counter <= pixel_counter + 1;
             write_enable <= 1;
 
@@ -102,21 +104,6 @@ module controller (
         end
         else begin
             idle_counter <= 20'd0;
-        end
-    end
-
-    always_ff @(negedge clk) begin
-        if (state == TRANSMIT_FRAME) begin
-            write_enable <= 1;
-|            if (compute_next_done) begin
-                next_frame <= 1;
-                pixel_counter <= 0; // reset for next phase
-            end else begin
-                next_frame <= 0;
-            end
-        end else begin
-            write_enable <= 0;
-            next_frame <= 0;
         end
     end
 
