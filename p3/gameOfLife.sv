@@ -3,6 +3,7 @@ module gameOfLife (
     input logic next_frame,          // Pulse when computation is complete
     input logic [5:0] read_address,  // Pixel address (0-63)
     input logic [7:0] data_input,    // Data from memory
+    output logic write_enable,
     output logic [7:0] data_output   // Computed data to write back
 );
     /*
@@ -57,8 +58,13 @@ module gameOfLife (
     end
     
     always_ff @(posedge clk) begin
-        if (state != IDLE)
+        if ((state != IDLE) && ) begin
             pixel_counter <= pixel_counter + 1; // will roll over to 0 once it goes over
+            write_enable = 1;
+            end
+            else begin 
+                write_enable = 0;
+            end
     end
 
     // Neighbor counting variable
@@ -109,7 +115,7 @@ module gameOfLife (
                             computed_grid[r][c] <= 8'h00;  // Stays dead
                     end
                     data_output <= computed_grid[r][c];
-
+                    // write memh??? so I can see whats getting output
         end
     end
 
