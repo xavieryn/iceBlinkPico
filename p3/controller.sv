@@ -84,9 +84,10 @@ module controller (
     always_ff @(negedge clk) begin
         if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin // does not count pixel up until transmit is done
             pixel_counter <= pixel_counter + 1;
-            write_enable <= 1;
-
+            write_enable = 1;
         end
+        else
+            write_enable = 0;
     end
 
     always_ff @(negedge clk) begin

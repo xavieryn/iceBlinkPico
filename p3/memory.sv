@@ -16,7 +16,7 @@ module memory #(
 
     always_ff @(posedge clk) begin // read what is written
         if (write_enable)  begin
-            mem[read_address] <= write_data; // once it gets past the intial
+            mem[read_address] <= write_data; // once it gets past the initial
         end
         read_data <= mem[read_address]; // reads the data and saves it to read_data (reads only 8 bit)
     end
