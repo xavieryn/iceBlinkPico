@@ -17,10 +17,6 @@ module top(
     logic [7:0] blue_data; // 8 bits
     logic [7:0] game_output; 
 
-    logic [7:0] write_red_data; // 8 bits
-    logic [7:0] write_green_data; // 8 bits
-    logic [7:0] write_blue_data; // 8 bits
-
     logic [5:0] pixel; // 64 digits (frame)
     logic [5:0] address;
 
@@ -79,20 +75,37 @@ module top(
     // Instance the controller
     controller u5 (
         .clk            (clk), // input
-        .load_sreg      (load_sreg), // input
-        .write_enable   (write_enable), // output
-        .next_frame     (next_frame), // output 
-        .transmit_pixel (transmit_pixel), // output
-        .pixel          (pixel) // output
+        .load_sreg      (load_sreg), // input (true or false)
+        .next_frame     (next_frame), // output (true or false)
+        .transmit_pixel (transmit_pixel), // output (true or false)
+        .pixel          (pixel) // output (address)
     );
 
     gameOfLife u6 ( // 
         .clk            (clk), // input
-        .next_frame     (next_frame), // input from controller
-        .read_address   (address),
+        .next_frame     (next_frame), // input given from controller
+        .read_address   (address), // input, whenever it is
         .data_input     (green_data), // input (letting us know where to actually find and read the data)
-        .data_output    (game_output) // output
+        .write_enable   (write_enable), // output // writing to memory
+        .data_output    (game_output) // output (for now all the same)
     );
+
+    // one for each color and then for when it is done
+    //   gameOfLife u6 ( // 
+    //     .clk            (clk), // input
+    //     .next_frame     (next_frame), // input from controller
+    //     .read_address   (address),
+    //     .data_input     (red_data), // input (letting us know where to actually find and read the data)
+    //     .data_output    (blue_output) // output
+    // );
+
+    //   gameOfLife u6 ( // 
+    //     .clk            (clk), // input
+    //     .next_frame     (next_frame), // input from controller
+    //     .read_address   (address),
+    //     .data_input     (blue_data), // input (letting us know where to actually find and read the data)
+    //     .data_output    (blue_output) // output
+    // );
 
     // always check in to see if button is being pressed, if so, go with said data
     always_ff @(posedge clk) begin  // sending one pixel each posedge and only if it is loading
