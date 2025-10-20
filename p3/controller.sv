@@ -3,7 +3,6 @@ module controller (
     input logic clk, 
     input logic idleReady,
     output logic load_sreg, 
-    output logic write_enable, 
     output logic next_frame,
     output logic transmit_pixel,  // output
     output logic [5:0] pixel 
@@ -69,7 +68,7 @@ module controller (
 
     always_comb begin
         next_transmit_phase = READ_CH_VALS;
-        if (state == TRANSMIT_FRAME) begin // when CH_VALS change
+        if (state == TRANSMIT_FRAME) begin // when transmit_phase change
             case (transmit_phase)
                 READ_CH_VALS:
                     next_transmit_phase = LOAD_SREG;
@@ -84,10 +83,7 @@ module controller (
     always_ff @(negedge clk) begin
         if ((state == TRANSMIT_FRAME) && transmit_pixel_done) begin // does not count pixel up until transmit is done
             pixel_counter <= pixel_counter + 1;
-            write_enable = 1;
         end
-        else
-            write_enable = 0;
     end
 
     always_ff @(negedge clk) begin
