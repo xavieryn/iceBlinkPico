@@ -19,6 +19,8 @@ module top(
     logic [7:0] write_red_data; // 8 bits
     logic [7:0] write_green_data; // 8 bits
     logic [7:0] write_blue_data; // 8 bits
+    logic [7:0] game_output;
+
 
     logic [5:0] pixel; // 64 digits (frame)
     logic [5:0] address;
@@ -71,7 +73,7 @@ module top(
     );
 
     // Instance the controller
-controller u5 (
+    controller u5 (
         .clk            (clk), // input
         .load_sreg      (load_sreg), // input
         .next_frame     (next_frame), // output 

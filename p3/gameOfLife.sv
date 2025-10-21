@@ -2,7 +2,7 @@ module gameOfLife (
     input logic clk,
     input logic next_frame,          // Pulse when computation is complete
     input logic [5:0] read_address,  // Pixel address (0-63)
-    input logic [7:0] data_input,    // Data from memory
+    input logic [7:0] data_input,    // Data from memory (only reads this to initialize)
     output logic [7:0] data_output   // Computed data to write back
 );
     /*
@@ -11,13 +11,10 @@ module gameOfLife (
     2) Survival: A living cell with two or three neighbors lives on.
     3) Overpopulation: A living cell with more than three neighbors dies. 
     4) Reproduction: A dead cell with exactly three neighbors becomes alive
-    
-    With WRAPAROUND: edges connect (toroidal topology)
+    With WRAPAROUND: edges connect 
     */
-
-    localparam TRANSMIT = 2'b0;
-    localparam COMPUTEANDSEND = 2'b1;
-    localparam IDLE = 2'b10;
+    localparam IDLE = 1'b0;
+    localparam COMPUTEANDSEND = 1'b1;
 
     // Two 8x8 grids for double buffering
     logic [7:0] current_grid [0:7][0:7];  // Current state
@@ -30,6 +27,8 @@ module gameOfLife (
     logic accumulated = 1'b0;
     logic state = IDLE;
     logic next_state;
+    logic has_been_initialized = 1'b0;
+    logic pixel_counter_not_done = 1'b0;
 
     // Wraparound neighbor indices
     logic [2:0] r_up, r_down, c_left, c_right;
@@ -41,36 +40,35 @@ module gameOfLife (
         state <= next_state;
     end
 
-    always_comb begin
-        unique case(state)
-            IDLE:
-                if (next_frame)
-                    next_state = TRANSMIT;
-                else
-                    next_state = IDLE;
-            TRANSMIT:
-                if (!next_frame)
-                    next_state = COMPUTEANDSEND;
-                else 
-                    next_state = TRANSMIT;
-            COMPUTEANDSEND: 
-                if (pixel_counter == 6'd63)
-                    next_state = TRANSMIT;
-                else 
-                    next_state = IDLE;
-        endcase
+    always_ff @(posedge clk) begin 
+        if ((!has_been_initialized)) begin
+            current_grid[row][col] <= data_input;
+        end
     end
-    
+
+    always_ff @(posedge clk) begin
+        if (next_frame)
+            has_been_initialized = 1'b1;
+    end
+
     always_ff @(posedge clk) begin
         if (state != IDLE)
             pixel_counter <= pixel_counter + 1;
     end
 
-    // Load current grid during TRANSMIT state
-    always_ff @(posedge clk) begin
-        if (state == TRANSMIT) begin
-            current_grid[row][col] <= data_input;
-        end
+    always_comb begin
+        unique case(state)
+            IDLE:
+                if (next_frame)
+                    next_state = COMPUTEANDSEND;
+                else
+                    next_state = IDLE;
+            COMPUTEANDSEND: 
+                if (pixel_counter == 6'd63)
+                    next_state = IDLE;
+                else 
+                    next_state = COMPUTEANDSEND;
+        endcase
     end
 
     logic [3:0] neighbor_count = 4'd0;

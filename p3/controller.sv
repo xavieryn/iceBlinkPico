@@ -46,22 +46,20 @@ module controller (
     end
 
     always_comb begin
-        next_frame = 0;
-        unique case (state) // when state changes (which is every time because it updates with clk)
-            TRANSMIT_FRAME: // each pixel by each pixel 
-                if ((pixel_counter == 6'd63) && (transmit_pixel_done) ) begin
-                    next_state = IDLE; 
-                    next_frame = 0;
-                end
-                else begin
-                    next_state = TRANSMIT_FRAME;
-                    next_frame = 1; // transmitting next frame to game of life
-                end
-            IDLE: // will be idle for most of the time because the fps is so low
+        next_state = state;  // Default
+        next_frame = 0;      // Default
+        
+        case (state)
+            TRANSMIT_FRAME: begin
+                if ((pixel_counter == 6'd63) && (transmit_pixel_done))
+                    next_state = IDLE;
+            end
+            
+            IDLE: begin
+                next_frame = 1;  // High during idle so gameOfLife computes
                 if (idle_done)
                     next_state = TRANSMIT_FRAME;
-                else
-                    next_state = IDLE;
+            end
         endcase
     end
 

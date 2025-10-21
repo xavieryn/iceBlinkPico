@@ -35,6 +35,7 @@ module led_matrix_tb;
         $dumpvars(0, u0.u6.neighbor_count);
         $dumpvars(0, u0.u6.r);
         $dumpvars(0, u0.u6.c);
+
         
         #10000000
         $finish;
@@ -45,66 +46,75 @@ module led_matrix_tb;
         clk = ~clk;
     end
     
-    // Monitor and print grid contents (ONLY FIRST 5)
-    logic [1:0] last_state = 2'b11;
+    // Monitor and print grid contents
+    logic last_state = 1'b1;  // Match gameOfLife state width (1 bit)
     integer output_count = 0;
+    logic printed_current = 0;
+    logic printed_computed = 0;
     
     always @(posedge clk) begin
-        if (output_count < 5) begin  // Only print first 5 times
-            // Detect state transitions
-            if (u0.u6.state != last_state) begin
-                last_state = u0.u6.state;
-                
-                // When transitioning FROM TRANSMIT (data just loaded)
-                if (last_state == 2'b0 && u0.u6.state == 2'b1) begin
-                    $display("\n========================================");
-                    $display("Output #%0d - Time: %0t - CURRENT GRID (just loaded):", output_count, $time);
-                    $display("========================================");
-                    for (int i = 0; i < 8; i++) begin
-                        $write("Row %0d: ", i);
-                        for (int j = 0; j < 8; j++) begin
-                            if (u0.u6.current_grid[i][j] > 8'h00)
-                                $write("■ ");  // Alive cell
-                            else
-                                $write("□ ");  // Dead cell
-                        end
-                        $write("\n");
+        if (output_count < 10) begin  // Print first 10 generations
+            
+            // When has_been_initialized goes high, initial grid is loaded
+            if (u0.u6.has_been_initialized && !printed_current) begin
+                $display("\n========================================");
+                $display("INITIAL GRID (from memory) - Time: %0t", $time);
+                $display("========================================");
+                for (int i = 0; i < 8; i++) begin
+                    $write("Row %0d: ", i);
+                    for (int j = 0; j < 8; j++) begin
+                        if (u0.u6.current_grid[i][j] > 8'h00)
+                            $write("█ ");  // Alive cell
+                        else
+                            $write("· ");  // Dead cell
                     end
-                    output_count = output_count + 1;
+                    $write("\n");
                 end
-                
-                // When computation done and going back to TRANSMIT
-                if (u0.u6.state == 2'b0 && u0.u6.pixel_counter == 6'd63) begin
-                    $display("\n========================================");
-                    $display("Output #%0d - Time: %0t - COMPUTED GRID (next generation):", output_count, $time);
-                    $display("========================================");
-                    for (int i = 0; i < 8; i++) begin
-                        $write("Row %0d: ", i);
-                        for (int j = 0; j < 8; j++) begin
-                            if (u0.u6.computed_grid[i][j] > 8'h00)
-                                $write("■ ");  // Alive cell
-                            else
-                                $write("□ ");  // Dead cell
-                        end
-                        $write("\n");
-                    end
-                    output_count = output_count + 1;
-                end
+                printed_current = 1;
             end
+            
+            // Detect when entering COMPUTEANDSEND state
+            if (u0.u6.state == 1'b1 && last_state == 1'b0) begin
+                $display("\n========================================");
+                $display("Generation %0d - COMPUTING - Time: %0t", output_count, $time);
+                $display("========================================");
+                printed_computed = 0;
+            end
+            
+            // When returning to IDLE after computation
+            if (u0.u6.state == 1'b0 && last_state == 1'b1 && !printed_computed) begin
+                $display("\n========================================");
+                $display("Generation %0d - COMPUTED RESULT - Time: %0t", output_count, $time);
+                $display("========================================");
+                for (int i = 0; i < 8; i++) begin
+                    $write("Row %0d: ", i);
+                    for (int j = 0; j < 8; j++) begin
+                        if (u0.u6.computed_grid[i][j] > 8'h00)
+                            $write("█ ");  // Alive cell
+                        else
+                            $write("· ");  // Dead cell
+                    end
+                    $write("\n");
+                end
+                output_count = output_count + 1;
+                printed_computed = 1;
+            end
+            
+            last_state = u0.u6.state;
         end
-        else if (output_count == 5) begin
-            $display("\n*** Reached 5 outputs, stopping display ***\n");
-            output_count = output_count + 1;  // Increment so this message only prints once
+        else if (output_count == 10) begin
+            $display("\n*** Reached 10 generations, stopping display ***\n");
+            output_count = output_count + 1;
         end
     end
     
-    // Write detailed grid info to file
+    // Write detailed grid info to file at the end
     initial begin
+        #9000000;  // Wait near end of simulation
+        
         grid_file = $fopen("grid_output.txt", "w");
         
-        #500000;  // Wait for some frames
-        
-        $fwrite(grid_file, "CURRENT GRID (HEX VALUES):\n");
+        $fwrite(grid_file, "FINAL CURRENT GRID (HEX VALUES):\n");
         for (int i = 0; i < 8; i++) begin
             for (int j = 0; j < 8; j++) begin
                 $fwrite(grid_file, "%02h ", u0.u6.current_grid[i][j]);
@@ -112,10 +122,32 @@ module led_matrix_tb;
             $fwrite(grid_file, "\n");
         end
         
-        $fwrite(grid_file, "\nCOMPUTED GRID (HEX VALUES):\n");
+        $fwrite(grid_file, "\nFINAL COMPUTED GRID (HEX VALUES):\n");
         for (int i = 0; i < 8; i++) begin
             for (int j = 0; j < 8; j++) begin
                 $fwrite(grid_file, "%02h ", u0.u6.computed_grid[i][j]);
+            end
+            $fwrite(grid_file, "\n");
+        end
+        
+        $fwrite(grid_file, "\nFINAL CURRENT GRID (VISUAL):\n");
+        for (int i = 0; i < 8; i++) begin
+            for (int j = 0; j < 8; j++) begin
+                if (u0.u6.current_grid[i][j] > 8'h00)
+                    $fwrite(grid_file, "█ ");
+                else
+                    $fwrite(grid_file, "· ");
+            end
+            $fwrite(grid_file, "\n");
+        end
+        
+        $fwrite(grid_file, "\nFINAL COMPUTED GRID (VISUAL):\n");
+        for (int i = 0; i < 8; i++) begin
+            for (int j = 0; j < 8; j++) begin
+                if (u0.u6.computed_grid[i][j] > 8'h00)
+                    $fwrite(grid_file, "█ ");
+                else
+                    $fwrite(grid_file, "· ");
             end
             $fwrite(grid_file, "\n");
         end
