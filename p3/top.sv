@@ -15,7 +15,6 @@ module top(
     logic [7:0] red_data; // 8 bits
     logic [7:0] green_data; // 8 bits
     logic [7:0] blue_data; // 8 bits
-    logic [7:0] game_output; 
 
     logic [7:0] write_red_data; // 8 bits
     logic [7:0] write_green_data; // 8 bits
@@ -25,12 +24,13 @@ module top(
     logic [5:0] address;
 
     logic [23:0] shift_reg = 24'd0; // 8 bits per channel and 3 channels
+    
+    // all booleans
     logic load_sreg;
     logic transmit_pixel;
     logic shift;
     logic ws2812b_out;
     logic next_frame;
-    logic write_enable;
 
     assign address =  pixel; // we only have 1 frame, so just the one 64 pixels
 
@@ -39,9 +39,7 @@ module top(
         .INIT_FILE      ("resources/red.txt") 
     ) u1 (
         .clk            (clk), // input
-        .write_enable   (write_enable), // input
         .read_address   (address), // input (letting us know where to actually find and read the data)
-        .write_data     (game_output), // input
         .read_data      (red_data) // output, reads and outputs one bit, increments, reads and outputs one bit, increments
     );
 
@@ -50,9 +48,7 @@ module top(
         .INIT_FILE      ("resources/green.txt")
     ) u2 (
         .clk            (clk), // input
-        .write_enable   (write_enable), //input
         .read_address   (address), // input 
-        .write_data     (game_output), // input
         .read_data      (green_data) // output  (saving the data to here)
     );
 
@@ -61,9 +57,7 @@ module top(
         .INIT_FILE      ("resources/blue.txt")
     ) u3 (
         .clk            (clk), // input
-        .write_enable   (write_enable), // input
         .read_address   (address), // input
-        .write_data     (game_output), // input
         .read_data      (blue_data) // output
     );
 
@@ -77,20 +71,19 @@ module top(
     );
 
     // Instance the controller
-    controller u5 (
+controller u5 (
         .clk            (clk), // input
         .load_sreg      (load_sreg), // input
-        .write_enable   (write_enable), // output
         .next_frame     (next_frame), // output 
         .transmit_pixel (transmit_pixel), // output
         .pixel          (pixel) // output
     );
 
-    gameOfLife u6 ( // 
+    gameOfLife u6 ( // red (will need to add 2 more in the future)
         .clk            (clk), // input
         .next_frame     (next_frame), // input from controller
         .read_address   (address),
-        .data_input     (green_data), // input (letting us know where to actually find and read the data)
+        .data_input     (red_data), // input (data from memory, only need this once) 
         .data_output    (game_output) // output
     );
 
