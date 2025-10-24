@@ -6,7 +6,7 @@ module memory #(
     input logic [5:0] read_address, 
     output logic [7:0] read_data
 );
-    logic [7:0] mem [0:63];
+    logic [7:0] mem [0:63]; // 64 cell array (1D)
 
     initial if (INIT_FILE) begin // if it finds the file (fed in from top.sv when initialized)
         $readmemh(INIT_FILE, mem); // reads the file

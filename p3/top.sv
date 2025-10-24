@@ -105,6 +105,23 @@ module top(
         .data_output    (blue_output) // output
     );
 
+    // one for each color and then for when it is done
+    //   gameOfLife u6 ( // 
+    //     .clk            (clk), // input
+    //     .next_frame     (next_frame), // input from controller
+    //     .read_address   (address),
+    //     .data_input     (red_data), // input (letting us know where to actually find and read the data)
+    //     .data_output    (blue_output) // output
+    // );
+
+    //   gameOfLife u6 ( // 
+    //     .clk            (clk), // input
+    //     .next_frame     (next_frame), // input from controller
+    //     .read_address   (address),
+    //     .data_input     (blue_data), // input (letting us know where to actually find and read the data)
+    //     .data_output    (blue_output) // output
+    // );
+
     // always check in to see if button is being pressed, if so, go with said data
     always_ff @(posedge clk) begin  // sending one pixel each posedge and only if it is loading
         if (load_sreg) begin

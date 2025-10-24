@@ -65,7 +65,7 @@ module controller (
 
     always_comb begin
         next_transmit_phase = READ_CH_VALS;
-        if (state == TRANSMIT_FRAME) begin // when CH_VALS change
+        if (state == TRANSMIT_FRAME) begin // when transmit_phase change
             case (transmit_phase)
                 READ_CH_VALS:
                     next_transmit_phase = LOAD_SREG;
