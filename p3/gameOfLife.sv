@@ -49,17 +49,18 @@ module gameOfLife (
     always_ff @(posedge clk) begin
         last_next_frame <= next_frame;
         
-        // Rising edge detection
+        // On the FIRST rising edge of next_frame, just mark as initialized (we got from memory)
+        // On SUBSEQUENT rising edges, start computation
         if (next_frame && !last_next_frame) begin
-            start_compute <= 1'b1;
+            if (!has_been_initialized) begin
+                has_been_initialized <= 1'b1;  // First time: just initialize pls
+            end
+            else begin
+                start_compute <= 1'b1;  // Already initialized: start computing :D
+            end
         end
         else if (state == COMPUTEANDSEND && pixel_counter == 6'd63) begin
             start_compute <= 1'b0;  // Clear after computation done
-        end
-        
-        // Mark as initialized on first rising edge
-        if (next_frame && !last_next_frame && !has_been_initialized) begin
-            has_been_initialized <= 1'b1;
         end
     end
     
@@ -96,23 +97,25 @@ module gameOfLife (
         endcase
     end
 
+    // Copy grid immediately after computation completes
+    // This gives us the full IDLE period (4 million cycles) to copy just 64 pixels (lots of time, no comms back)
     logic [5:0] copy_counter = 6'd0;
-    logic copying = 1'b0;
+    logic needs_copy = 1'b0;
     
     always_ff @(posedge clk) begin
+        // When computation finishes, start copying immediately
         if (state == COMPUTEANDSEND && pixel_counter == 6'd63) begin
-            // Start copying after computation
-            copying <= 1'b1;
+            needs_copy <= 1'b1;
             copy_counter <= 6'd0;
         end
-        else if (copying) begin
-            // Copy one pixel per clock
+        // Copy one pixel per clock until done
+        else if (needs_copy) begin
             current_grid[copy_counter[5:3]][copy_counter[2:0]] <= 
                 computed_grid[copy_counter[5:3]][copy_counter[2:0]];
             copy_counter <= copy_counter + 1;
             
             if (copy_counter == 6'd63) begin
-                copying <= 1'b0;
+                needs_copy <= 1'b0;
             end
         end
     end

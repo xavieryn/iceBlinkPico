@@ -46,6 +46,14 @@ module led_matrix_tb;
         clk = ~clk;
     end
     
+    // Monitor game_output values
+    always @(posedge clk) begin
+        if (u0.u5.load_sreg) begin  // When controller loads shift register
+            $display("Time %0t: pixel=%0d, red_data=%02h, game_output=%02h", 
+                     $time, u0.pixel, u0.red_data, u0.game_output);
+        end
+    end
+    
     // Monitor and print grid contents
     logic last_state = 1'b1;  // Match gameOfLife state width (1 bit)
     integer output_count = 0;
@@ -96,6 +104,13 @@ module led_matrix_tb;
                     end
                     $write("\n");
                 end
+                
+                // Also print data_output value
+                $display("\ndata_output tracking:");
+                $display("Current data_output = %02h", u0.u6.data_output);
+                $display("Current read_address = %0d (row=%0d, col=%0d)", 
+                         u0.address, u0.address[5:3], u0.address[2:0]);
+                
                 output_count = output_count + 1;
                 printed_computed = 1;
             end

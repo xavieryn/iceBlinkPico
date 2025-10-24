@@ -32,7 +32,7 @@ module controller (
     // pixel_counter doesn't need to get reset because it rolls over to 0 because it is a power of 2 so once its all 1's, then
     // it overflows and just reaches 0. 
     logic [8:0] transmit_counter = 9'd0;
-    logic [19:0] idle_counter = 20'd0; // = 375000 - 64 x (360 + 2) for 32 frames / second we want it to be idle for longer
+    logic [21:0] idle_counter = 22'd0; // = 375000 - 64 x (360 + 2) for 32 frames / second we want it to be idle for longer
 
     logic transmit_pixel_done;
     logic idle_done;

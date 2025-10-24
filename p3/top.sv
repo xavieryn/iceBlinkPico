@@ -16,9 +16,9 @@ module top(
     logic [7:0] green_data; // 8 bits
     logic [7:0] blue_data; // 8 bits
 
-    logic [7:0] write_red_data; // 8 bits
-    logic [7:0] write_green_data; // 8 bits
-    logic [7:0] write_blue_data; // 8 bits
+    logic [7:0] red_output; // 8 bits
+    logic [7:0] green_output; // 8 bits
+    logic [7:0] blue_output; // 8 bits
     logic [7:0] game_output;
 
 
@@ -86,7 +86,23 @@ module top(
         .next_frame     (next_frame), // input from controller
         .read_address   (address),
         .data_input     (red_data), // input (data from memory, only need this once) 
-        .data_output    (game_output) // output
+        .data_output    (red_output) // output
+    );
+
+    gameOfLife u7 ( // red (will need to add 2 more in the future)
+        .clk            (clk), // input
+        .next_frame     (next_frame), // input from controller
+        .read_address   (address),
+        .data_input     (green_data), // input (data from memory, only need this once) 
+        .data_output    (green_output) // output
+    );
+
+    gameOfLife u8 ( // red (will need to add 2 more in the future)
+        .clk            (clk), // input
+        .next_frame     (next_frame), // input from controller
+        .read_address   (address),
+        .data_input     (blue_data), // input (data from memory, only need this once) 
+        .data_output    (blue_output) // output
     );
 
     // always check in to see if button is being pressed, if so, go with said data
@@ -94,13 +110,13 @@ module top(
         if (load_sreg) begin
             unique case ({ SW, BOOT }) // when all values are set to 0, that means it won't be changed
                 2'b00:
-                    shift_reg <= { game_output, 16'd0 }; // only green
+                    shift_reg <= { green_output, 16'd0 }; // only green
                 2'b01:
-                    shift_reg <= { 8'd0, game_output, 8'd0 }; // only red
+                    shift_reg <= { 8'd0, red_output, 8'd0 }; // only red
                 2'b10:
-                    shift_reg <= { 16'd0, game_output }; // only blue
+                    shift_reg <= { 16'd0, blue_output }; // only blue
                 2'b11:
-                    shift_reg <= { game_output, game_output, game_output }; // not pressed, shows everything
+                    shift_reg <= { green_output, red_output, blue_output }; // not pressed, shows everything
             endcase
         end
         else if (shift) begin // if time to shift 
