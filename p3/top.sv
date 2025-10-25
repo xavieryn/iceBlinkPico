@@ -19,7 +19,6 @@ module top(
     logic [7:0] red_output; // 8 bits
     logic [7:0] green_output; // 8 bits
     logic [7:0] blue_output; // 8 bits
-    logic [7:0] game_output;
 
 
     logic [5:0] pixel; // 64 digits (frame)

@@ -37,7 +37,7 @@ module led_matrix_tb;
         $dumpvars(0, u0.u6.c);
 
         
-        #10000000
+        #100000000
         $finish;
     end
 
@@ -49,8 +49,8 @@ module led_matrix_tb;
     // Monitor game_output values
     always @(posedge clk) begin
         if (u0.u5.load_sreg) begin  // When controller loads shift register
-            $display("Time %0t: pixel=%0d, red_data=%02h, game_output=%02h", 
-                     $time, u0.pixel, u0.red_data, u0.game_output);
+            $display("Time %0t: pixel=%0d, red_data=%02h, red_output=%02h", 
+                     $time, u0.pixel, u0.red_data, u0.red_output);
         end
     end
     
