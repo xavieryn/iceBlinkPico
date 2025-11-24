@@ -6,7 +6,7 @@ module Program_counter(clk, reset, PC_in, PC_out);
     input  [31:0] PC_in;
     output reg [31:0] PC_out;
 
-    always @(posedge clk or posedge reset)
+    always_ff @(posedge clk or posedge reset)
     begin  
         if(reset)
         PC_out <= 32'b00; // reset everything to 0. 
@@ -33,9 +33,9 @@ input [31:0] read_address;
 output reg [31:0] instruction_out;
 
 reg [31:0] I_Mem[63:0]; // 64 pieces of memory? 
-integer k;
+int k;
 
-always @(posedge clk or posedge reset)
+always_ff @(posedge clk or posedge reset)
 begin
     if(reset)
     begin
@@ -58,12 +58,13 @@ module Reg_File(clk, reset, RegWrite, Rs1, Rs2, Rd, Write_data, read_data1, read
 input clk, reset, RegWrite;
 input [4:0] Rs1, Rs2, Rd; 
 input [31:0] Write_data;
+int k;
 
 output [31:0] read_data1, read_data2;
 
 reg [31:0] Registers[31:0];
 
-always @(posedge clk or posedge reset)
+always_ff @(posedge clk or posedge reset)
 begin
     if (reset)
     begin
@@ -89,7 +90,7 @@ input [6:0] Opcode;
 input [31:0] instruction;
 output reg [31:0] ImmExt;
 
-always @(*)
+always_comb
 begin
     case(Opcode)
     // I-type
@@ -118,7 +119,7 @@ input[6:0] instruction;
 output reg Branch, MemRead, MemtoReg, MemWrite, ALUSrc, RegWrite; // which in struction to actually run
 output reg [1:0] ALUOp;
 
-always @(*)
+always_comb
 begin
     case(instruction)
     // r-type instruction
@@ -139,7 +140,7 @@ module ALU_unit(A, B, Control_in, ALU_Result, zero);
     output reg zero; 
     output reg[31:0] ALU_Result; 
 
-    always @(Control_in or A or B)
+    always_ff @(Control_in or A or B)
     begin
         case(Control_in)
         4'b0000: begin zero <= 0; ALU_Result <= A & B; end
@@ -159,7 +160,7 @@ module ALU_Control(ALUOp, fun7, fun3, Control_out);
 
     output reg [3:0] Control_out;
 
-    always @(*)
+    always_comb
     begin
         case({ALUOp, fun7, fun3})
         6'b00_0_000: Control_out <= 4'b0010;
@@ -179,11 +180,11 @@ module Data_Memory(clk, reset, MemWrite, MemRead, read_address, Write_data, MemD
 input clk, reset, MemWrite, MemRead;
 input [31:0] read_address, Write_data; 
 output [31:0] MemData_out;
-integer k;
+int k;
 
 reg [31:0] D_Memory[63:0];
 
-always @(posedge clk or posedge reset)
+always_ff @(posedge clk or posedge reset)
 begin
     if (reset)
     begin for(k = 0; k <64; k=k+1)begin
