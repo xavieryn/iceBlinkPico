@@ -6,7 +6,7 @@ module Program_counter(clk, reset, PC_in, PC_out);
     input  [31:0] PC_in;
     output reg [31:0] PC_out;
 
-    always @(posedge or clk or posedge reset)
+    always @(posedge clk or posedge reset)
     begin  
         if(reset)
         PC_out <= 32'b00; // reset everything to 0. 
@@ -53,7 +53,7 @@ endmodule
 
 //Register File
 
-module Reg_File(clk, reset, RegWrite, Rs1, Rs2, Rd, Write_data, read_data1, read_data2)
+module Reg_File(clk, reset, RegWrite, Rs1, Rs2, Rd, Write_data, read_data1, read_data2);
 
 input clk, reset, RegWrite;
 input [4:0] Rs1, Rs2, Rd; 
@@ -87,7 +87,7 @@ module ImmGen(Opcode, instruction, ImmExt);
 
 input [6:0] Opcode;
 input [31:0] instruction;
-output [31:0] ImmExt;
+output reg [31:0] ImmExt;
 
 always @(*)
 begin
@@ -213,9 +213,9 @@ endmodule
 module Mux2(sel2, A2, B2, Mux2out);
 input sel2;
 input [31:0] A2, B2; 
-output [31:0] Mux2_out; 
+output [31:0] Mux2out; 
 
-assign Mux2_out = (sel2==1'b0) ? A2 : B2; 
+assign Mux2out = (sel2==1'b0) ? A2 : B2; 
 endmodule
 
 
@@ -231,7 +231,7 @@ endmodule
 module And_logic(branch, zero, and_out);
 input branch, zero; 
 output and_out;
-assign out = branch & zero; 
+assign and_out = branch & zero; 
 
 endmodule
 
