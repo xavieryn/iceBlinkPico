@@ -1,5 +1,11 @@
-// Program Counter
+/* 
+Code written by Hong Zhang, Jack Wei & Xavier Nishikawa 
+Based off of this video from the MP4 resources (https://www.youtube.com/watch?v=dh88oe6O0QU)
 
+Then converted the code to System Verilog as the code was originally in Verilog
+*/
+
+// Program Counter
 module Program_counter(clk, reset, PC_in, PC_out);
 
     input clk, reset;
@@ -32,24 +38,34 @@ input clk, reset;
 input [31:0] read_address;
 output reg [31:0] instruction_out;
 
-reg [31:0] I_Mem[63:0]; // 64 pieces of memory? 
+reg [31:0] I_Mem[63:0];
 int k;
+
+// Load instructions at startup (for now)
+initial begin
+    // Initialize all to 0
+    for (k = 0; k < 64; k = k+1) begin
+        I_Mem[k] = 32'h00000000;
+    end
+    
+    // Load test program (for now)
+    I_Mem[0] = 32'h00500093;  // addi x1, x0, 5
+    I_Mem[1] = 32'h00A00113;  // addi x2, x0, 10
+    I_Mem[2] = 32'h002081B3;  // add x3, x1, x2
+    I_Mem[3] = 32'h40110233;  // sub x4, x2, x1
+    I_Mem[4] = 32'h0020F2B3;  // and x5, x1, x2
+    I_Mem[5] = 32'h0020E333;  // or x6, x1, x2
+end
 
 always_ff @(posedge clk or posedge reset)
 begin
     if(reset)
-    begin
-        for (k = 0; k < 64; k = k+1)
-        begin
-            I_Mem[k] <= 32'b00;
-        end
-    end
+        instruction_out <= 32'h00000000;
     else 
-    instruction_out <= I_Mem[read_address];
+        instruction_out <= I_Mem[read_address];
 end
 
-
-endmodule 
+endmodule
 
 //Register File
 
@@ -72,7 +88,7 @@ begin
             Registers[k] <= 32'b00;
         end
     end
-    else if (RegWrite) begin
+    else if (RegWrite && Rd != 0) begin
         Registers[Rd] <= Write_data; // write to register destination
     end
 end
@@ -93,15 +109,18 @@ output reg [31:0] ImmExt;
 always_comb
 begin
     case(Opcode)
-    // I-type
-    ?'b0000011 : ImmExt = {{20{instruction[31]}}, instruction[31:20]}; // repeat bit 31 twenty times (sign extending)
+    // I-type Load
+    7'b0000011 : ImmExt = {{20{instruction[31]}}, instruction[31:20]};
     // Sign extending is for the ALU because it expects 32 bits, but for immediate, we only use the first 12 bits
+    // I-type ALU (ADDI, etc.) 
+    7'b0010011 : ImmExt = {{20{instruction[31]}}, instruction[31:20]};
     // S-type
-    ?'b0100011 : ImmExt = {{20{instruction[31]}}, instruction[31:25], instruction[11:7] }; // WHAT DOES THIS MEAN
+    7'b0100011 : ImmExt = {{20{instruction[31]}}, instruction[31:25], instruction[11:7]};
     // first 20 bits are sign extended, and the two other are put together (making a 12 bit immediate like above)
     // B-type
-    ?'b1100011 : ImmExt = {{19{instruction[31]}}, instruction[31], instruction[30:25], instruction[11:8],1'b0};
+    7'b1100011 : ImmExt = {{19{instruction[31]}}, instruction[31], instruction[30:25], instruction[11:8], 1'b0};
     // first 19 bits are sign extended, and the two other are put together (making a 12 bit immediate like above)
+    default: ImmExt = 32'b0;
     endcase
 end
 endmodule
@@ -122,12 +141,17 @@ output reg [1:0] ALUOp;
 always_comb
 begin
     case(instruction)
-    // r-type instruction
-    'b0110011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} <= 8'b001000_10; // R-type
-    'b0000011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} <= 8'b111100_00; // Load
-    'b0100011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} <= 8'b100010_00; // store
-    'b1100011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} <= 8'b000001_01; // Branch
-     
+    // R-type instruction
+    7'b0110011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} = 8'b00100010; // R-type
+    // I-type Load
+    7'b0000011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} = 8'b11110000; // Load
+    // I-type ALU (ADDI) - YES YOU NEED THIS!
+    7'b0010011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} = 8'b10100000; // I-type ALU
+    // S-type Store
+    7'b0100011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} = 8'b10001000; // Store
+    // B-type Branch
+    7'b1100011 : {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} = 8'b00000101; // Branch
+    default:     {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp} = 8'b00000000;
     endcase
 end
 endmodule
@@ -140,13 +164,14 @@ module ALU_unit(A, B, Control_in, ALU_Result, zero);
     output reg zero; 
     output reg[31:0] ALU_Result; 
 
-    always_ff @(Control_in or A or B)
+    always_comb
     begin
         case(Control_in)
-        4'b0000: begin zero <= 0; ALU_Result <= A & B; end
-        4'b0001: begin zero <= 0; ALU_Result <= A | B; end 
-        4'b0010: begin zero <= 0; ALU_Result <= A + B; end
-        4'b0110: begin  if (A==B) zero <= 1; else zero <= 0; ALU_Result <= A - B; end 
+        4'b0000: begin zero = 0; ALU_Result = A & B; end
+        4'b0001: begin zero = 0; ALU_Result = A | B; end 
+        4'b0010: begin zero = 0; ALU_Result = A + B; end
+        4'b0110: begin if (A==B) zero = 1; else zero = 0; ALU_Result = A - B; end
+        default: begin zero = 0; ALU_Result = 0; end  // default in case its cooked
         endcase
     end
 endmodule
@@ -163,12 +188,13 @@ module ALU_Control(ALUOp, fun7, fun3, Control_out);
     always_comb
     begin
         case({ALUOp, fun7, fun3})
-        6'b00_0_000: Control_out <= 4'b0010;
-        6'b01_0_000: Control_out <= 4'b0110;
-        6'b10_0_000: Control_out <= 4'b0010;
-        6'b10_1_000: Control_out <= 4'b0110;
-        6'b10_0_111: Control_out <= 4'b0000;
-        6'b10_0_110: Control_out <= 4'b0001; 
+        6'b00_0_000: Control_out = 4'b0010;
+        6'b01_0_000: Control_out = 4'b0110;
+        6'b10_0_000: Control_out = 4'b0010;
+        6'b10_1_000: Control_out = 4'b0110;
+        6'b10_0_111: Control_out = 4'b0000;
+        6'b10_0_110: Control_out = 4'b0001; 
+        default: Control_out = 4'b0010;  // Add this
         endcase
     end
 endmodule
@@ -250,8 +276,8 @@ module top(clk, reset);
 input clk, reset; 
 
 wire [31:0] PC_top, instruction_top, Rd1_top, Rd2_top, ImmExt_top, mux1_top, sum_out_top, NextoPC_top, PCin_top, address_top, Memdata_top, WriteBack_top; 
-wire RegWrite_top, ALUSrc_top, branch_top, zero_top, sel2_top, MemtoReg_top, MemRead_top; 
-wire [4:0] ALUOp_top;
+wire RegWrite_top, ALUSrc_top, branch_top, zero_top, sel2_top, MemtoReg_top, MemRead_top, MemWrite_top; 
+wire [1:0] ALUOp_top;
 wire [3:0] control_top;
 
 
@@ -262,16 +288,16 @@ Program_counter PC(.clk(clk), .reset(reset), .PC_in(PCin_top), .PC_out(PC_top ))
 PCplus4 PC_adder(.fromPC(PC_top), .NextoPC(NextoPC_top));
 
 // Instruction Memory
-Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top), .instruction_out(instruction_top));
+Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top[31:2]), .instruction_out(instruction_top));
 
-// Register File
-Reg_File Reg_file(.clk(clk), .reset(reset), .RegWrite(RegWrite_top), .Rs1(instruction_top[19:15]), .Rs2(instruction_top[24:20]), .Rd(instruction_top[11:7]), .Write_data(MemRead_top), .read_data1(Rd1_top), .read_data2(Rd2_top));
+// Register File (changed writebacktop for write_data, check if this is right)
+Reg_File Reg_file(.clk(clk), .reset(reset), .RegWrite(RegWrite_top), .Rs1(instruction_top[19:15]), .Rs2(instruction_top[24:20]), .Rd(instruction_top[11:7]), .Write_data(WriteBack_top), .read_data1(Rd1_top), .read_data2(Rd2_top));
 
 // Immediate Generator
 ImmGen ImmGen(.Opcode(instruction_top[6:0]), .instruction(instruction_top), .ImmExt(ImmExt_top));
 
 // Control Unit 
-Control_Unit Control_Unit(.instruction(instruction_top[6:0]), .Branch(branch_top), .MemRead(MemRead_top), .MemtoReg(MemtoReg_top), .ALUOp(ALUOp_top), .MemWrite(MemtoReg_top), .ALUSrc(ALUSrc_top), .RegWrite(RegWrite_top));
+Control_Unit Control_Unit(.instruction(instruction_top[6:0]), .Branch(branch_top), .MemRead(MemRead_top), .MemtoReg(MemtoReg_top), .ALUOp(ALUOp_top), .MemWrite(MemWrite_top), .ALUSrc(ALUSrc_top), .RegWrite(RegWrite_top));
 
 // ALU Control
 ALU_Control ALU_Control(.ALUOp(ALUOp_top), .fun7(instruction_top[30]), .fun3(instruction_top[14:12]), .Control_out(control_top));
@@ -292,7 +318,7 @@ And_logic AND(.branch(branch_top), .zero(zero_top), .and_out(sel2_top));
 Mux2 Adder_mux(.sel2(sel2_top), .A2(NextoPC_top), .B2(sum_out_top), .Mux2out(PCin_top));
 
 // Data Memory
- Data_Memory Data_mem(.clk(clk), .reset(reset), .MemWrite(MemtoReg_top), .MemRead(MemRead_top), .read_address(address_top), .Write_data(Rd2_top), .MemData_out(Memdata_top));
+ Data_Memory Data_mem(.clk(clk), .reset(reset), .MemWrite(MemWrite_top), .MemRead(MemRead_top), .read_address(address_top[31:2]), .Write_data(Rd2_top), .MemData_out(Memdata_top));
 
 // Mux 3 
 Mux3 Memory_mux(.sel3(MemtoReg_top), .A3(address_top), .B3(Memdata_top), .Mux3_out(WriteBack_top));
@@ -307,11 +333,32 @@ reg clk, reset;
 top uut(.clk(clk),.reset(reset));
 
 initial begin
+    // Dump waveform for GTKWave
+    $dumpfile("dump.vcd");
+    $dumpvars(0, tb_top);
+    
+    // Monitor key signals
+    $monitor("Time=%0t PC=%h Inst=%h | x1=%d x2=%d x3=%d x4=%d x5=%d x6=%d", 
+             $time, uut.PC_top, uut.instruction_top,
+             uut.Reg_file.Registers[1], uut.Reg_file.Registers[2], 
+             uut.Reg_file.Registers[3], uut.Reg_file.Registers[4],
+             uut.Reg_file.Registers[5], uut.Reg_file.Registers[6]);
+    
     clk = 0;
-    reset=1;
-    #5;
+    reset = 1;
+    #10;
     reset = 0;
-    #400;
+    #200;
+    
+    $display("\n=== Final Register Values ===");
+    $display("x1 = %d (expected 5)", uut.Reg_file.Registers[1]);
+    $display("x2 = %d (expected 10)", uut.Reg_file.Registers[2]);
+    $display("x3 = %d (expected 15)", uut.Reg_file.Registers[3]);
+    $display("x4 = %d (expected 5)", uut.Reg_file.Registers[4]);
+    $display("x5 = %d (expected 0)", uut.Reg_file.Registers[5]);
+    $display("x6 = %d (expected 15)", uut.Reg_file.Registers[6]);
+    
+    $finish;
 end
 
 always begin
