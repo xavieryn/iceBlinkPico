@@ -1,0 +1,12 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1763069757" />
+    <testcase name="add_test" classname="test_alu" file="/Applications/oss-cad-suite/iceBlinkPico/RISCV/tb/alu/test_alu.py" lineno="6" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="default_test" classname="test_alu" file="/Applications/oss-cad-suite/iceBlinkPico/RISCV/tb/alu/test_alu.py" lineno="21" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="zero_test" classname="test_alu" file="/Applications/oss-cad-suite/iceBlinkPico/RISCV/tb/alu/test_alu.py" lineno="34" time="0.00026488304138183594" sim_time_ns="2.0" ratio_time="7550.502250225022" />
+  </testsuite>
+</testsuites>

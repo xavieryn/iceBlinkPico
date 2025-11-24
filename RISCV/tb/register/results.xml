@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1763069067" />
+    <testcase name="random_write_read_test" classname="register" file="/Applications/oss-cad-suite/iceBlinkPico/RISCV/tb/register/register.py" lineno="7" time="0.039008140563964844" sim_time_ns="10032.0" ratio_time="257177.08803755225" />
+  </testsuite>
+</testsuites>

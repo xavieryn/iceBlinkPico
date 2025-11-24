@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1762809799" />
+    <testcase name="memory_data_test" classname="test_memory" file="/Applications/oss-cad-suite/iceBlinkPico/RISCV/tb/memory/test_memory.py" lineno="8" time="0.001293182373046875" sim_time_ns="77.0" ratio_time="59543.032448377584" />
+  </testsuite>
+</testsuites>
