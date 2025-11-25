@@ -4,7 +4,7 @@
 // 32-bit address space.
 //
 // Data memory spans addresses 0x00000000 to 0x00000FFF and can be written to 
-// or read from in words (4 bytes), half words (two bytes), or signle bytes. 
+// or read from in words (4 bytes), half words (two bytes), or single bytes. 
 // Word access are aligned to four-byte boundaries. Half-word accesses are 
 // aligned to two-byte boundaries. Half-word and single-byte reads can either 
 // be signed or unsigned. With the exception of the addresses associated with
@@ -117,6 +117,9 @@ module memory #(
     logic dmem_write_halfword;
 
     // Instantiate instruction memory arrays
+    // Instantiates 4 different arrays at the same time, so it can take in the
+    // whole 32 bits (4 bytes) in one clock cycle instead of 4
+    // you can see that they later just splice the 4 of them together with the assign imem_data_out
     memory_array #(
         .INIT_FILE      ((IMEM_INIT_FILE_PREFIX != "") ? { IMEM_INIT_FILE_PREFIX, "0.txt" } : "")
     ) imem0 (
@@ -158,9 +161,14 @@ module memory #(
     );
 
     // Handle instruction memory reads
+    // if we are within the range, otherwise it will just be 32 0. 
     assign imem_data_out = (imem_address[31:12] == 20'd1) ? { imem_data_out3, imem_data_out2, imem_data_out1, imem_data_out0 } : 32'd0;
 
     // Instaniate data memory arrays
+    // Instantiates 4 different arrays at the same time, so it can take in the
+    // whole 32 bits (4 bytes) in one clock cycle instead of 4
+    // USED FOR INSTRUCTIONS LIKE LOAD OR WRITE
+    // 4KB (1KB = 1024 Bytes) = 4096 BYTES
     memory_array #(
         .INIT_FILE      ((DMEM_INIT_FILE_PREFIX != "") ? { DMEM_INIT_FILE_PREFIX, "0.txt" } : "")
     ) dmem0 (
@@ -202,6 +210,7 @@ module memory #(
     );
 
     // Handle data memory reads / writes
+    // sees what it needs to set true to know what the command is (like a case switch) 
     assign is_leds = (dmem_address[31:2] == 30'h3FFFFFFF);
     assign is_millis = (dmem_address[31:2] == 30'h3FFFFFFE);
     assign is_micros = (dmem_address[31:2] == 30'h3FFFFFFD);
@@ -210,16 +219,22 @@ module memory #(
     // Register funct3 and two lsbs of dmem address to preserve data out even 
     // if funct3 and the dmem address change in the middle of the clock cycle.
     always_ff @(posedge clk) begin
-        dmem_address1 <= dmem_address[1];
+        dmem_address1 <= dmem_address[1]; // will later get combined to say if it needs
+        // word access (4 bytes), half word access (2 bytes) or byte access (1 byte)
         dmem_address0 <= dmem_address[0];
+        // serves as the second opcode to specify exactly what memory operation
+        // LB/SB (1 byte, so that needs to be clearly communicated)
+        // LH/SH (2 bytes, so clear)
+        // LW/SW (4 bytes)
+        // clear to see why we need to specify now in memory 4, 2, or 1 byte
         dmem_word <= funct3[1];
         dmem_halfword <= funct3[0];
         dmem_unsigned <= funct3[2];
     end
 
     always_ff @(posedge clk) begin
-        if (is_leds) begin
-            dmem_data_value <= leds;
+        if (is_leds) begin // hardware register that isnt part of dmem (specfic & dedicated registers)
+            dmem_data_value <= leds; // apparently called (Memory-Mapped I/O)
         end
         else if (is_millis) begin
             dmem_data_value <= millis;
@@ -231,13 +246,13 @@ module memory #(
             dmem_data_value <= 32'd0;
         end
     end
-
+    // if its dmem, just splice it together, otherwise grab the value from the specialized register
     assign dmem_dout = is_dmem ? { dmem_data_out3, dmem_data_out2, dmem_data_out1, dmem_data_out0 } : dmem_data_value;
 
-    assign dmem_dout10 = dmem_dout[15:0];
-    assign dmem_dout32 = dmem_dout[31:16];
+    assign dmem_dout10 = dmem_dout[15:0]; // half word (2 bytes)
+    assign dmem_dout32 = dmem_dout[31:16]; // half word (2 bytes)
 
-    assign dmem_dout0 = dmem_dout[7:0];
+    assign dmem_dout0 = dmem_dout[7:0]; // Byte
     assign dmem_dout1 = dmem_dout[15:8];
     assign dmem_dout2 = dmem_dout[23:16];
     assign dmem_dout3 = dmem_dout[31:24];
@@ -259,7 +274,7 @@ module memory #(
             dmem_data_out = dmem_address1 ? { 16'd0, dmem_dout32 } : { 16'd0, dmem_dout10 };
         end
         else if (!dmem_halfword && !dmem_unsigned) begin
-            unique case ({ dmem_address1, dmem_address0 })
+            unique case ({ dmem_address1, dmem_address0 }) // will get combined
                 2'b00: dmem_data_out = { {24{sign_bit0}}, dmem_dout0 };
                 2'b01: dmem_data_out = { {24{sign_bit1}}, dmem_dout1 };
                 2'b10: dmem_data_out = { {24{sign_bit2}}, dmem_dout2 };
