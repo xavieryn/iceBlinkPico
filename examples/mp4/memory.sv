@@ -257,23 +257,25 @@ module memory #(
     assign dmem_dout2 = dmem_dout[23:16];
     assign dmem_dout3 = dmem_dout[31:24];
 
-    assign sign_bit0 = dmem_dout[7];
-    assign sign_bit1 = dmem_dout[15];
-    assign sign_bit2 = dmem_dout[23];
-    assign sign_bit3 = dmem_dout[31];
+    assign sign_bit0 = dmem_dout[7]; // sign bit for byte 0 
+    assign sign_bit1 = dmem_dout[15]; // sign bit for byte 1 (and lower halfword)
+    assign sign_bit2 = dmem_dout[23]; // sign bit for byte 2
+    assign sign_bit3 = dmem_dout[31]; // sign bit for byte 3 (and upper ahlf-word for dmem_dout32)
 
     // Handle word, half word, and byte reads (signed and unsigned)
+    // NOTE: X should probably look more at this to understand it
     always_comb begin
         if (dmem_word) begin
-            dmem_data_out = dmem_dout;
+            dmem_data_out = dmem_dout; // just save what was in the dmem
+            // like a load word function
         end
-        else if (dmem_halfword && !dmem_unsigned) begin
+        else if (dmem_halfword && !dmem_unsigned) begin // load LH (load half)
             dmem_data_out = dmem_address1 ? { {16{sign_bit3}}, dmem_dout32 } : { {16{sign_bit1}}, dmem_dout10 };
         end
-        else if (dmem_halfword && dmem_unsigned) begin
+        else if (dmem_halfword && dmem_unsigned) begin // LHU (load halfword unsigned)
             dmem_data_out = dmem_address1 ? { 16'd0, dmem_dout32 } : { 16'd0, dmem_dout10 };
         end
-        else if (!dmem_halfword && !dmem_unsigned) begin
+        else if (!dmem_halfword && !dmem_unsigned) begin // LB (load byte) byte by byte
             unique case ({ dmem_address1, dmem_address0 }) // will get combined
                 2'b00: dmem_data_out = { {24{sign_bit0}}, dmem_dout0 };
                 2'b01: dmem_data_out = { {24{sign_bit1}}, dmem_dout1 };
@@ -281,7 +283,7 @@ module memory #(
                 2'b11: dmem_data_out = { {24{sign_bit3}}, dmem_dout3 };
             endcase
         end
-        else begin
+        else begin // LBU (load byte unsigned) byte by byte
             unique case ({ dmem_address1, dmem_address0 })
                 2'b00: dmem_data_out = { 24'd0, dmem_dout0 };
                 2'b01: dmem_data_out = { 24'd0, dmem_dout1 };

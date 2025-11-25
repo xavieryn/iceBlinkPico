@@ -292,6 +292,8 @@ Program_counter PC(.clk(clk), .reset(reset), .PC_in(PCin_top), .PC_out(PC_top ))
 // PC Adder
 PCplus4 PC_adder(.fromPC(PC_top), .NextoPC(NextoPC_top));
 
+
+// I THINK I NEED TO GET RID OF THIS
 // Instruction Memory
 Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top[31:2]), .instruction_out(instruction_top));
 
@@ -322,11 +324,18 @@ And_logic AND(.branch(branch_top), .zero(zero_top), .and_out(sel2_top));
 // Mux2
 Mux2 Adder_mux(.sel2(sel2_top), .A2(NextoPC_top), .B2(sum_out_top), .Mux2out(PCin_top));
 
+// I THINK I NEED TO GET RID OF THIS
 // Data Memory
  Data_Memory Data_mem(.clk(clk), .reset(reset), .MemWrite(MemWrite_top), .MemRead(MemRead_top), .read_address(address_top[31:2]), .Write_data(Rd2_top), .MemData_out(Memdata_top));
 
 // Mux 3 
 Mux3 Memory_mux(.sel3(MemtoReg_top), .A3(address_top), .B3(Memdata_top), .Mux3_out(WriteBack_top));
+
+
+// NEED TO MAKE SOMETHING LIKE A UNIFIED MEMORY because Brad's code takes care of both data and instruct memory 
+// memory Unified_memory
+
+
 endmodule
 
 // testbench
