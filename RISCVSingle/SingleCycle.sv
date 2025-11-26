@@ -5,6 +5,9 @@ Based off of this video from the MP4 resources (https://www.youtube.com/watch?v=
 Then converted the code to System Verilog as the code was originally in Verilog
 */
 
+`include "memory.sv"
+
+
 // Program Counter
 // where we are in the program
 module Program_counter(clk, reset, PC_in, PC_out);
@@ -30,42 +33,6 @@ module PCplus4(fromPC, NextoPC);
     output [31:0] NextoPC;
 
     assign NextoPC = 4 + fromPC;  // going 4 bytes every time as each instruction is 4 bytes/32 bits
-
-endmodule
-
-// Instruction Memory 
-module Instruction_Mem(clk, reset, read_address, instruction_out);
-
-input clk, reset;
-input [31:0] read_address;
-output reg [31:0] instruction_out;
-
-reg [31:0] I_Mem[63:0];
-int k;
-
-// Load instructions at startup (for now)
-initial begin
-    // Initialize all to 0
-    for (k = 0; k < 64; k = k+1) begin
-        I_Mem[k] = 32'h00000000;
-    end
-    
-    // Load test program (for now)
-    I_Mem[0] = 32'h00500093;  // addi x1, x0, 5
-    I_Mem[1] = 32'h00A00113;  // addi x2, x0, 10
-    I_Mem[2] = 32'h002081B3;  // add x3, x1, x2
-    I_Mem[3] = 32'h40110233;  // sub x4, x2, x1
-    I_Mem[4] = 32'h0020F2B3;  // and x5, x1, x2
-    I_Mem[5] = 32'h0020E333;  // or x6, x1, x2
-end
-
-always_ff @(posedge clk or posedge reset)
-begin
-    if(reset)
-        instruction_out <= 32'h00000000;
-    else 
-        instruction_out <= I_Mem[read_address]; // reads instruction in address (32 bits / 4 bytes)
-end
 
 endmodule
 
@@ -204,33 +171,6 @@ module ALU_Control(ALUOp, fun7, fun3, Control_out);
     end
 endmodule
 
-// Data Memory
-module Data_Memory(clk, reset, MemWrite, MemRead, read_address, Write_data, MemData_out);
-
-// rewriting all 32 registers that are 32 bits
-input clk, reset, MemWrite, MemRead;
-input [31:0] read_address, Write_data; 
-output [31:0] MemData_out;
-int k;
-
-reg [31:0] D_Memory[63:0];
-
-always_ff @(posedge clk or posedge reset)
-begin
-    if (reset)
-    begin for(k = 0; k <64; k=k+1)begin
-        D_Memory[k] <= 32'b00;
-    end
-    end
-    else if (MemWrite) begin
-        D_Memory[read_address] <= Write_data;
-    end
-end
-
-assign MemData_out = (MemRead) ? D_Memory[read_address] : 32'b00; 
-
-endmodule
-
 // Multiplexers
 
 module Mux1(sel1, A1, B1, Mux1_out);
@@ -276,27 +216,28 @@ assign Sum_out = in_1 + in_2;
 
 endmodule
 
+// THE TOPPPPP
+// WILL SPLIT ALL FILES LATER BUT WANT TO MAKE SURE IT WORKS FIRST AND NOT DEBUG MORE STUFF IN CASE I BREAK SOMETHING MOVING IT
+
 module top(clk, reset);
 
 input clk, reset; 
 
 wire [31:0] PC_top, instruction_top, Rd1_top, Rd2_top, ImmExt_top, mux1_top, sum_out_top, NextoPC_top, PCin_top, address_top, Memdata_top, WriteBack_top; 
 wire RegWrite_top, ALUSrc_top, branch_top, zero_top, sel2_top, MemtoReg_top, MemRead_top, MemWrite_top; 
+// brads
+wire reset_out_wire, led_out, red_out, green_out, blue_out;
 wire [1:0] ALUOp_top;
 wire [3:0] control_top;
 
-
+// 1. Instruction Fetch Stage 
 // Program Counter
 Program_counter PC(.clk(clk), .reset(reset), .PC_in(PCin_top), .PC_out(PC_top ));
 
 // PC Adder
 PCplus4 PC_adder(.fromPC(PC_top), .NextoPC(NextoPC_top));
 
-
-// I THINK I NEED TO GET RID OF THIS
-// Instruction Memory
-Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top[31:2]), .instruction_out(instruction_top));
-
+// 2. Control And Decode
 // Register File (changed writebacktop for write_data, check if this is right)
 Reg_File Reg_file(.clk(clk), .reset(reset), .RegWrite(RegWrite_top), .Rs1(instruction_top[19:15]), .Rs2(instruction_top[24:20]), .Rd(instruction_top[11:7]), .Write_data(WriteBack_top), .read_data1(Rd1_top), .read_data2(Rd2_top));
 
@@ -306,6 +247,7 @@ ImmGen ImmGen(.Opcode(instruction_top[6:0]), .instruction(instruction_top), .Imm
 // Control Unit 
 Control_Unit Control_Unit(.instruction(instruction_top[6:0]), .Branch(branch_top), .MemRead(MemRead_top), .MemtoReg(MemtoReg_top), .ALUOp(ALUOp_top), .MemWrite(MemWrite_top), .ALUSrc(ALUSrc_top), .RegWrite(RegWrite_top));
 
+// 3. Execute Stage (actually do stuff)
 // ALU Control
 ALU_Control ALU_Control(.ALUOp(ALUOp_top), .fun7(instruction_top[30]), .fun3(instruction_top[14:12]), .Control_out(control_top));
 
@@ -326,14 +268,27 @@ Mux2 Adder_mux(.sel2(sel2_top), .A2(NextoPC_top), .B2(sum_out_top), .Mux2out(PCi
 
 // I THINK I NEED TO GET RID OF THIS
 // Data Memory
- Data_Memory Data_mem(.clk(clk), .reset(reset), .MemWrite(MemWrite_top), .MemRead(MemRead_top), .read_address(address_top[31:2]), .Write_data(Rd2_top), .MemData_out(Memdata_top));
+// Data_Memory Data_mem(.clk(clk), .reset(reset), .MemWrite(MemWrite_top), .MemRead(MemRead_top), .read_address(address_top[31:2]), .Write_data(Rd2_top), .MemData_out(Memdata_top));
+// Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top[31:2]), .instruction_out(instruction_top));
+
+memory Unified_memory (
+    .clk           (clk), 
+    .funct3        (instruction_top[14:12]), // Needs funct3 for store/load size
+    .dmem_wren     (MemWrite_top),            // Data Memory Write Enable
+    .dmem_address  (address_top),             // Data Address (ALU Result)
+    .dmem_data_in  (Rd2_top),                 // Data to Write (from Register File)
+    .imem_address  (PC_top),                  // Instruction Address (PC)
+    .imem_data_out (instruction_top),         // Instruction Read Output
+    .dmem_data_out (Memdata_top),             // Data Read Output
+    .reset         (reset_out_wire),          // Output reset signal (or tie to input reset)
+    .led           (led_out),                 // LED output wire
+    .red           (red_out),
+    .green         (green_out),
+    .blue          (blue_out)
+)
 
 // Mux 3 
 Mux3 Memory_mux(.sel3(MemtoReg_top), .A3(address_top), .B3(Memdata_top), .Mux3_out(WriteBack_top));
-
-
-// NEED TO MAKE SOMETHING LIKE A UNIFIED MEMORY because Brad's code takes care of both data and instruct memory 
-// memory Unified_memory
 
 
 endmodule
@@ -380,3 +335,73 @@ always begin
 end
  
 endmodule
+
+
+
+
+// // Instruction Memory 
+// module Instruction_Mem(clk, reset, read_address, instruction_out);
+
+// input clk, reset;
+// input [31:0] read_address;
+// output reg [31:0] instruction_out;
+
+// reg [31:0] I_Mem[63:0];
+// int k;
+
+// // Load instructions at startup (for now)
+// initial begin
+//     // Initialize all to 0
+//     for (k = 0; k < 64; k = k+1) begin
+//         I_Mem[k] = 32'h00000000;
+//     end
+    
+//     // Load test program (for now)
+//     I_Mem[0] = 32'h00500093;  // addi x1, x0, 5
+//     I_Mem[1] = 32'h00A00113;  // addi x2, x0, 10
+//     I_Mem[2] = 32'h002081B3;  // add x3, x1, x2
+//     I_Mem[3] = 32'h40110233;  // sub x4, x2, x1
+//     I_Mem[4] = 32'h0020F2B3;  // and x5, x1, x2
+//     I_Mem[5] = 32'h0020E333;  // or x6, x1, x2
+// end
+
+// always_ff @(posedge clk or posedge reset)
+// begin
+//     if(reset)
+//         instruction_out <= 32'h00000000;
+//     else 
+//         instruction_out <= I_Mem[read_address]; // reads instruction in address (32 bits / 4 bytes)
+// end
+
+// endmodule
+
+
+
+
+
+// Data Memory
+// module Data_Memory(clk, reset, MemWrite, MemRead, read_address, Write_data, MemData_out);
+
+// // rewriting all 32 registers that are 32 bits
+// input clk, reset, MemWrite, MemRead;
+// input [31:0] read_address, Write_data; 
+// output [31:0] MemData_out;
+// int k;
+
+// reg [31:0] D_Memory[63:0];
+
+// always_ff @(posedge clk or posedge reset)
+// begin
+//     if (reset)
+//     begin for(k = 0; k <64; k=k+1)begin
+//         D_Memory[k] <= 32'b00;
+//     end
+//     end
+//     else if (MemWrite) begin
+//         D_Memory[read_address] <= Write_data;
+//     end
+// end
+
+// assign MemData_out = (MemRead) ? D_Memory[read_address] : 32'b00; 
+
+// endmodule
