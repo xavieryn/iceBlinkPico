@@ -271,7 +271,7 @@ Mux2 Adder_mux(.sel2(sel2_top), .A2(NextoPC_top), .B2(sum_out_top), .Mux2out(PCi
 // Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top[31:2]), .instruction_out(instruction_top));
 
 memory #(
-    .IMEM_INIT_FILE_PREFIX("imem_"),  // Loads imem_0.txt, imem_1.txt, etc.
+    .IMEM_INIT_FILE_PREFIX("rv32i_test"),  // Loads imem_0.txt, imem_1.txt, etc.
     .DMEM_INIT_FILE_PREFIX("")        // No data mem init needed for your test
 ) Unified_memory (
     .clk           (clk), 
@@ -337,12 +337,30 @@ module tb_top;
         #200;
         
         $display("\n=== Final Register Values ===");
-        $display("x1 = %d (expected 5)", uut.Reg_file.Registers[1]);
-        $display("x2 = %d (expected 10)", uut.Reg_file.Registers[2]);
-        $display("x3 = %d (expected 15)", uut.Reg_file.Registers[3]);
-        $display("x4 = %d (expected 5)", uut.Reg_file.Registers[4]);
-        $display("x5 = %d (expected 0)", uut.Reg_file.Registers[5]);
-        $display("x6 = %d (expected 15)", uut.Reg_file.Registers[6]);
+        $display("x1 = %d (expected ?)", uut.Reg_file.Registers[1]);
+        $display("x2 = %d (expected ?)", uut.Reg_file.Registers[2]);
+        $display("x3 = %d (expected ?)", uut.Reg_file.Registers[3]);
+        $display("x4 = %d (expected ?)", uut.Reg_file.Registers[4]);
+        $display("x5 = %d (expected ?)", uut.Reg_file.Registers[5]);
+        $display("x6 = %d (expected ?)", uut.Reg_file.Registers[6]);
+        $display("x7 = %d (expected ?)", uut.Reg_file.Registers[7]);
+        $display("x8 = %d (expected ?)", uut.Reg_file.Registers[8]);
+        $display("x9 = %d (expected ?)", uut.Reg_file.Registers[9]);
+        $display("x10 = %d (expected ?)", uut.Reg_file.Registers[10]);
+        $display("x11 = %d (expected ?)", uut.Reg_file.Registers[11]);
+        $display("x12 = %d (expected ?)", uut.Reg_file.Registers[12]);
+        $display("x13 = %d (expected ?)", uut.Reg_file.Registers[13]);
+        $display("x14 = %d (expected ?)", uut.Reg_file.Registers[14]);
+        $display("x15 = %d (expected ?)", uut.Reg_file.Registers[15]);
+        $display("x16 = %d (expected ?)", uut.Reg_file.Registers[16]);
+        $display("x17 = %d (expected ?)", uut.Reg_file.Registers[17]);
+        $display("x18 = %d (expected ?)", uut.Reg_file.Registers[18]);
+        $display("x19 = %d (expected ?)", uut.Reg_file.Registers[19]);
+        $display("x20 = %d (expected ?)", uut.Reg_file.Registers[20]);
+        $display("x21 = %d (expected ?)", uut.Reg_file.Registers[21]);
+        $display("x22 = %d (expected ?)", uut.Reg_file.Registers[22]);
+        $display("x23 = %d (expected ?)", uut.Reg_file.Registers[23]);
+        
         
         if (uut.Reg_file.Registers[1] == 5 &&
             uut.Reg_file.Registers[2] == 10 &&
