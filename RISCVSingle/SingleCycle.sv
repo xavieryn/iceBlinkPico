@@ -19,7 +19,7 @@ module Program_counter(clk, reset, PC_in, PC_out);
     always_ff @(posedge clk or posedge reset)
     begin  
         if(reset)
-        PC_out <= 32'b00; // reset back to address 0
+        PC_out <= 32'h00001000; // reset back to address 1000 because thats where instructions start
         else 
         PC_out <= PC_in; // go to next address 
     end
@@ -219,14 +219,13 @@ endmodule
 // THE TOPPPPP
 // WILL SPLIT ALL FILES LATER BUT WANT TO MAKE SURE IT WORKS FIRST AND NOT DEBUG MORE STUFF IN CASE I BREAK SOMETHING MOVING IT
 
-module top(clk, reset);
+module top(input clk, reset, output led, red, green, blue);
 
-input clk, reset; 
 
 wire [31:0] PC_top, instruction_top, Rd1_top, Rd2_top, ImmExt_top, mux1_top, sum_out_top, NextoPC_top, PCin_top, address_top, Memdata_top, WriteBack_top; 
 wire RegWrite_top, ALUSrc_top, branch_top, zero_top, sel2_top, MemtoReg_top, MemRead_top, MemWrite_top; 
 // brads
-wire reset_out_wire, led_out, red_out, green_out, blue_out;
+wire reset_out_wire;
 wire [1:0] ALUOp_top;
 wire [3:0] control_top;
 
@@ -271,21 +270,24 @@ Mux2 Adder_mux(.sel2(sel2_top), .A2(NextoPC_top), .B2(sum_out_top), .Mux2out(PCi
 // Data_Memory Data_mem(.clk(clk), .reset(reset), .MemWrite(MemWrite_top), .MemRead(MemRead_top), .read_address(address_top[31:2]), .Write_data(Rd2_top), .MemData_out(Memdata_top));
 // Instruction_Mem Inst_Memory(.clk(clk), .reset(reset), .read_address(PC_top[31:2]), .instruction_out(instruction_top));
 
-memory Unified_memory (
+memory #(
+    .IMEM_INIT_FILE_PREFIX("imem_"),  // Loads imem_0.txt, imem_1.txt, etc.
+    .DMEM_INIT_FILE_PREFIX("")        // No data mem init needed for your test
+) Unified_memory (
     .clk           (clk), 
     .funct3        (instruction_top[14:12]), // Needs funct3 for store/load size
-    .dmem_wren     (MemWrite_top),            // Data Memory Write Enable
+ .dmem_wren     (MemWrite_top),            // Data Memory Write Enable
     .dmem_address  (address_top),             // Data Address (ALU Result)
     .dmem_data_in  (Rd2_top),                 // Data to Write (from Register File)
     .imem_address  (PC_top),                  // Instruction Address (PC)
     .imem_data_out (instruction_top),         // Instruction Read Output
     .dmem_data_out (Memdata_top),             // Data Read Output
     .reset         (reset_out_wire),          // Output reset signal (or tie to input reset)
-    .led           (led_out),                 // LED output wire
-    .red           (red_out),
-    .green         (green_out),
-    .blue          (blue_out)
-)
+    .led           (led_out),                 // LED output wire              
+    .red           (red),
+    .green         (green),
+    .blue          (blue)
+);
 
 // Mux 3 
 Mux3 Memory_mux(.sel3(MemtoReg_top), .A3(address_top), .B3(Memdata_top), .Mux3_out(WriteBack_top));
@@ -295,44 +297,68 @@ endmodule
 
 // testbench
 
+
+// Testbench with manual memory initialization
 module tb_top;
+    reg clk, reset;
+    wire led, red, green, blue;
 
-reg clk, reset;
+    top uut(
+        .clk(clk),
+        .reset(reset),
+        .led(led),
+        .red(red),
+        .green(green),
+        .blue(blue)
+    );
 
-top uut(.clk(clk),.reset(reset));
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(0, tb_top);
+        
+        $display("=== Loaded Test Program ===");
+        $display("Inst 0: %h%h%h%h", uut.Unified_memory.imem3.memory[0],
+                 uut.Unified_memory.imem2.memory[0], uut.Unified_memory.imem1.memory[0],
+                 uut.Unified_memory.imem0.memory[0]);
+        $display("Inst 1: %h%h%h%h", uut.Unified_memory.imem3.memory[1],
+                 uut.Unified_memory.imem2.memory[1], uut.Unified_memory.imem1.memory[1],
+                 uut.Unified_memory.imem0.memory[1]);
+        
+        $monitor("Time=%0t PC=%h Inst=%h | x1=%d x2=%d x3=%d x4=%d x5=%d x6=%d", 
+                 $time, uut.PC_top, uut.instruction_top,
+                 uut.Reg_file.Registers[1], uut.Reg_file.Registers[2], 
+                 uut.Reg_file.Registers[3], uut.Reg_file.Registers[4],
+                 uut.Reg_file.Registers[5], uut.Reg_file.Registers[6]);
+        
+        clk = 0;
+        reset = 1;
+        #10;
+        reset = 0;
+        #200;
+        
+        $display("\n=== Final Register Values ===");
+        $display("x1 = %d (expected 5)", uut.Reg_file.Registers[1]);
+        $display("x2 = %d (expected 10)", uut.Reg_file.Registers[2]);
+        $display("x3 = %d (expected 15)", uut.Reg_file.Registers[3]);
+        $display("x4 = %d (expected 5)", uut.Reg_file.Registers[4]);
+        $display("x5 = %d (expected 0)", uut.Reg_file.Registers[5]);
+        $display("x6 = %d (expected 15)", uut.Reg_file.Registers[6]);
+        
+        if (uut.Reg_file.Registers[1] == 5 &&
+            uut.Reg_file.Registers[2] == 10 &&
+            uut.Reg_file.Registers[3] == 15 &&
+            uut.Reg_file.Registers[4] == 5 &&
+            uut.Reg_file.Registers[5] == 0 &&
+            uut.Reg_file.Registers[6] == 15) begin
+            $display("\n*** TEST PASSED ***\n");
+        end else begin
+            $display("\n*** TEST FAILED ***\n");
+        end
+        
+        $finish;
+    end
 
-initial begin
-    // Dump waveform for GTKWave
-    $dumpfile("dump.vcd");
-    $dumpvars(0, tb_top);
-    
-    // Monitor key signals
-    $monitor("Time=%0t PC=%h Inst=%h | x1=%d x2=%d x3=%d x4=%d x5=%d x6=%d", 
-             $time, uut.PC_top, uut.instruction_top,
-             uut.Reg_file.Registers[1], uut.Reg_file.Registers[2], 
-             uut.Reg_file.Registers[3], uut.Reg_file.Registers[4],
-             uut.Reg_file.Registers[5], uut.Reg_file.Registers[6]);
-    
-    clk = 0;
-    reset = 1;
-    #10;
-    reset = 0;
-    #200;
-    
-    $display("\n=== Final Register Values ===");
-    $display("x1 = %d (expected 5)", uut.Reg_file.Registers[1]);
-    $display("x2 = %d (expected 10)", uut.Reg_file.Registers[2]);
-    $display("x3 = %d (expected 15)", uut.Reg_file.Registers[3]);
-    $display("x4 = %d (expected 5)", uut.Reg_file.Registers[4]);
-    $display("x5 = %d (expected 0)", uut.Reg_file.Registers[5]);
-    $display("x6 = %d (expected 15)", uut.Reg_file.Registers[6]);
-    
-    $finish;
-end
-
-always begin
-    #5 clk = ~clk;
-end
+    always #5 clk = ~clk;
  
 endmodule
 
